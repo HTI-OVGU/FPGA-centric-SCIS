@@ -1,0 +1,75 @@
+## blink.ccf
+#
+# Date: 2024-07-18
+#
+# Syntax:
+# NET "<pin-name>" Loc = "<pin-location>" | <opt.-constraints>;
+#
+# Backward compatible legacy syntax:
+# <pin-direction> "<pin-name>" Loc = "<pin-location>" | <opt.-constraints>;
+#
+# Additional constraints can be appended using the pipe symbol.
+# Files are read line by line. Text after the hash symbol is ignored.
+#
+# Available legacy pin directions:
+#
+# Pin_in
+#   defines an input pin
+# Pin_out
+#   defines an output pin
+# Pin_triout
+#   defines a tristate output pin
+# Pin_inout
+#   defines a bidirectional pin
+#
+# Available pin constraints:
+#
+# SCHMITT_TRIGGER={true,false}
+#   enables or disables schmitt trigger (hysteresis) option
+# PULLUP={true,false}
+#   enables or disables I/O pullup resistor of nominal 50kOhm
+# PULLDOWN={true,false}
+#   enables or disables I/O pulldown resistor of nominal 50kOhm
+# KEEPER={true,false}
+#   enables or disables I/O keeper option
+# SLEW={slow,fast}
+#   sets slew rate to slow or fast
+# DRIVE={3,6,9,12}
+#   sets output drive strength to 3mA..12mA
+# DELAY_OBF={0..15}
+#   adds an additional delay of n * nominal 50ps to output signal
+# DELAY_IBF={0..15}
+#   adds an additional delay of n * nominal 50ps to input signal
+# FF_IBF={true,false}
+#   enables or disables placing of FF in input buffer, if possible
+# FF_OBF={true,false}
+#   enables or disables placing of FF in output buffer, if possible
+# LVDS_BOOST={true,false}
+#   enables increased LVDS output current of 6.4mA (default: 3.2mA)
+# LVDS_RTERM={true,false}
+#   enables on-chip LVDS termination resistor of nominal 100Ohm, in input mode only
+#
+# Global IO constraints can be set with the default_GPIO statement. It can be
+# overwritten by individual settings for specific GPIOs, e.g.:
+#   default_GPIO | DRIVE=3; # sets all output strengths to 3mA, unless overwritten
+#
+
+
+Net   "clk"  Loc = "IO_SB_A8" | SCHMITT_TRIGGER=true;
+Net   "button"  Loc = "IO_EB_B0"; # SW3
+## SPI from constraints, gatemate github
+
+NET   "sclk" Loc = "IO_NB_A0"| slew=fast | DRIVE=9 | FF_OBF=true;
+NET   "cs" Loc = "IO_NB_A1"| slew=fast | DRIVE=9 | FF_OBF=true;
+NET   "mosi" Loc = "IO_NB_A2"| slew=fast | DRIVE=9 | FF_OBF=true;
+NET   "miso" Loc = "IO_NB_A3";
+
+# Onboard LED
+#Net   "onboard_leds[0]" Loc = "IO_EB_B1"; #LED0 D1
+#Net   "onboard_leds[1]" Loc = "IO_EB_B2"; #LED0 D2
+#Net   "onboard_leds[2]" Loc = "IO_EB_B3"; #LED0 D3
+#Net   "onboard_leds[3]" Loc = "IO_EB_B4"; #LED0 D4
+#Net   "onboard_leds[4]" Loc = "IO_EB_B5"; #LED0 D5
+#Net   "onboard_leds[5]" Loc = "IO_EB_B6"; #LED0 D6
+#Net   "onboard_leds[6]" Loc = "IO_EB_B7"; #LED0 D7
+#Net   "onboard_leds[7]" Loc = "IO_EB_B8"; #LED0 D8
