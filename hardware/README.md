@@ -5,7 +5,7 @@ This folder contains the VHDL source files, constraints and a makefile to build 
 
 Tools within the OSS-CAD-Suite by YoysyHQ (tested with Build 21-01-2026) have been used for synthesis, implementation, bitstream packing and bitstream uploading.
 
-![VHDL workflow](etc/figure/Workflow.png)
+![VHDL workflow](../etc/figure/Workflow.png)
 
 Building the data concentrator project for two W5500s connected to the PMOD pins:
 
@@ -38,7 +38,7 @@ make sim_all
 
 ## Data Concentrator
 
-![Data Concentrator System Design](etc/figure/Data%20Concentrator.png)
+![Data Concentrator System Design](../etc/figure/Data%20Concentrator.png)
 
 Features: 
 - 8-bit data AXI-stream based data flow
