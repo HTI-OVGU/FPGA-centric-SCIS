@@ -1,41 +1,40 @@
-top_w5500_file=src/w5500/top_w5500.vhd
-top_for_tb_w5500=src/w5500/top_for_tb_w5500.vhd
-testbench_w5500=src/w5500/tb_top_w5500.vhd
-fsm = src/w5500/w5500_state_machine.vhd
-external_data_handler = src/w5500/ext_data_handler.vhd
-spi_master = src/w5500/spi_master.vhd
-axis_data_fifo = src/axis_data_fifo.vhd
-stalling_axis_data_fifo = src/stalling_axi_data_fifo.vhd
-data_streamer = src/w5500/spi_streamer.vhd
-stream_manager = src/w5500/w5500_stream_manager.vhd
-bram_dp_write_through = src/bram_dp_write_through.vhd
+top_w5500_file=hdl/testbenches/top_w5500.vhd
+top_for_tb_w5500=hdl/testbenches/top_for_tb_w5500.vhd
+testbench_w5500=hdl/testbenches/tb_top_w5500.vhd
+fsm = hdl/w5500/w5500_state_machine.vhd
+external_data_handler = hdl/w5500/ext_data_handler.vhd
+spi_master = hdl/w5500/spi_master.vhd
+axis_data_fifo = hdl/axis_data_fifo.vhd
+data_streamer = hdl/w5500/spi_streamer.vhd
+stream_manager = hdl/w5500/w5500_stream_manager.vhd
+bram_dp_write_through = hdl/bram_dp_write_through.vhd
 
-metric_packet_stream_interface = src/data_concentrator/metric_packet_stream_interface.vhd
+metric_packet_stream_interface = hdl/data_concentrator/metric_packet_stream_interface.vhd
 
-metric_packet_fifo = src/data_concentrator/metric_packet_fifo.vhd
-priority_axis_data_fifo = src/data_concentrator/priority_fifo.vhd
-data_concentrator = src/data_concentrator/data_concentrator.vhd
-udp_packet_adapter = src/data_concentrator/udp_packet_adapter.vhd
-metric_packet_manager = src/data_concentrator/metric_packet_manager.vhd
-threshold_logic = src/data_concentrator/threshold_logic.vhd 
-bram_threshold_lookup = src/data_concentrator/bram_threshold_lookup.vhd
-telemetry_sender = src/data_concentrator/telemetry_sender.vhd
-interlock_glitch_filter = src/data_concentrator/interlock_glitch_filter.vhd
+metric_packet_fifo = hdl/data_concentrator/metric_packet_fifo.vhd
+priority_axis_data_fifo = hdl/data_concentrator/priority_fifo.vhd
+data_concentrator = hdl/data_concentrator/data_concentrator.vhd
+udp_packet_adapter = hdl/data_concentrator/udp_packet_adapter.vhd
+metric_packet_manager = hdl/data_concentrator/metric_packet_manager.vhd
+threshold_logic = hdl/data_concentrator/threshold_logic.vhd 
+bram_threshold_lookup = hdl/data_concentrator/bram_threshold_lookup.vhd
+telemetry_sender = hdl/data_concentrator/telemetry_sender.vhd
+interlock_glitch_filter = hdl/data_concentrator/interlock_glitch_filter.vhd
 
-data_concentrator_testbench = src/data_concentrator/tb_data_concentrator.vhd
+data_concentrator_testbench = hdl/testbenches/tb_data_concentrator.vhd
 
-testbench_spimaster = src/w5500/tb_spimaster.vhd
+testbench_spimaster = hdl/testbenches/tb_spimaster.vhd
 
 # TOP FILE FOR BOTH W5500 and DataConcentrator (instead of external Data handler)
-top_file = src/top.vhd
-top_for_tb_w5500_and_dc = src/top_for_w5500_and_dc_tb.vhd
-tb_for_w5500_and_dc = src/tb_top_w5500_and_dc.vhd
+top_file = hdl/top.vhd
+top_for_tb_w5500_and_dc = hdl/testbenches/top_for_w5500_and_dc_tb.vhd
+tb_for_w5500_and_dc = hdl/testbenches/tb_top_w5500_and_dc.vhd
 
 verilog_net_export = net/top_synth.v
 design_json_export = design.json
 
-constraints_file_w5500 = src/w5500.ccf
-constraints_file_all = src/constraints_dc_and_w5500.ccf
+constraints_file_w5500 = hdl/w5500.ccf
+constraints_file_all = hdl/constraints_dc_and_w5500.ccf
 impl_file = implementation.txt
 bit_file = bitstream.bit
 
@@ -106,7 +105,7 @@ sim_all:
 	gtkwave wave_data_concentrator.vcd;
 
 synth_w5500:
-	yosys -m ghdl -p "ghdl -fexplicit --warn-no-binding --ieee=synopsys --std=08 -frelaxed $(top_w5500_file) $(fsm) $(external_data_handler) $(axis_data_fifo) $(stalling_axis_data_fifo) $(spi_master) $(data_streamer) $(stream_manager) $(bram_dp_write_through) -e top_w5500; synth_gatemate -top top_w5500 -vlog $(verilog_net_export) -nomx8 -luttree; write_json $(design_json_export)"
+	yosys -m ghdl -p "ghdl -fexplicit --warn-no-binding --ieee=synopsys --std=08 -frelaxed $(top_w5500_file) $(fsm) $(external_data_handler) $(axis_data_fifo) $(spi_master) $(data_streamer) $(stream_manager) $(bram_dp_write_through) -e top_w5500; synth_gatemate -top top_w5500 -vlog $(verilog_net_export) -nomx8 -luttree; write_json $(design_json_export)"
 
 synth_w5500_and_dc:
 	yosys -m ghdl -p "ghdl -fexplicit --warn-no-binding --ieee=synopsys --std=08 -frelaxed $(top_file) $(fsm) $(external_data_handler) $(spi_master) $(axis_data_fifo) $(data_streamer) $(stream_manager) $(bram_dp_write_through) $(metric_packet_stream_interface) $(metric_packet_fifo) $(priority_axis_data_fifo) $(data_concentrator) $(udp_packet_adapter) $(bram_dp_write_through) $(metric_packet_manager) $(bram_threshold_lookup) $(threshold_logic) $(interlock_glitch_filter) $(telemetry_sender) -e top; synth_gatemate -top top -nomx8 -luttree; write_json $(design_json_export)"
