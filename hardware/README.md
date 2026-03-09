@@ -49,3 +49,8 @@ Features:
 
 
 Adding new devices to the Threshold Lookup Memory can be done using the threshold_address_generator.py script.
+
+Usage: 
+```bash
+python3 threshold_address_generator.py
+```
