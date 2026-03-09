@@ -3,7 +3,7 @@
 
 This folder contains the VHDL source files, constraints and a makefile to build the project for the CologneChip GateMate M1A1 FPGA Board.
 
-Tools within the OSS-CAD-Suite by YoysyHQ (tested with Build 21-01-2026) have been used for synthesis, implementation, bitstream packing and bitstream uploading.
+Tools within the [OSS-CAD-Suite](https://github.com/YosysHQ/oss-cad-suite-build/releases) by YoysyHQ (tested with Build 21-01-2026) have been used for synthesis, implementation, bitstream packing and bitstream uploading.
 
 ![VHDL workflow](../etc/figure/Workflow.png)
 
