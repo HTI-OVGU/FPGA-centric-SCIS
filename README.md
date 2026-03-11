@@ -44,7 +44,7 @@ Working:
 - Implements at 40 MHz FPGA sys_clk speed
 - Dual W5500, one for RX and one for TX
 - Protocol Code V01 (signed Q22.10 values)
-- Data concentrator with UDP packet adapter, Metric Packet Manager and first version of interlock protocol code V01 Metric Packets
+- Data concentrator/Supervisory Monitoring Unit with UDP packet adapter, Metric Packet Manager and first version of interlock protocol code V01 Metric Packets
 
 ToDo/Bug:
 - RX W5500 sometimes closes socket, when bombarded with UDP packets that exceed the 2KB RX Buffer

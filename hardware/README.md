@@ -36,7 +36,7 @@ make sim_dc
 make sim_all
 ```
 
-## Data Concentrator
+## Supervisory Monitoring Unit / Data Concentrator
 
 ![Data Concentrator System Design](../etc/figure/Data%20Concentrator.png)
 
@@ -46,7 +46,6 @@ Features:
 - Glitch filter with hysteresis behavior for external interlock signals
 - 8 priority levels (encoded in 3 bit USER field)
 - sending an "INTERLOCK" or "ALMOSTFULL" alert by the Telemetry Sender
-
 
 Adding new devices to the Threshold Lookup Memory can be done using the threshold_address_generator.py script.
 
