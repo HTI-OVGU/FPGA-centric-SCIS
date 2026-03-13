@@ -4,6 +4,13 @@
 - Prometheus (Version 3.6.0): time-series database ; folder contains config YAML
 - testing scripts: contains python scripts used to evaluate data concentrator on Cologne Chip GateMate M1A1 implementation
 
+## Prometheus
+
+Prometheus 3.6.0 was used an run using a config yaml found in /software_infrastructure/Prometheus:
+```bash
+./prometheus --config.file=prometheus.yaml
+```
+
 ## Grafana 
 
 Grafana (open-source edition) 12 was setup using Docker CLI and persistent storage using the [following commands](https://grafana.com/docs/grafana/latest/setup-grafana/installation/docker/):

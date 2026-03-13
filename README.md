@@ -25,10 +25,6 @@ The Software architecture consists of a Metric Packet Server, Prometheus and Gra
 
 Source Code, testing and configuration files are found in /software_infrastructure
 
-Prometheus 3.6.0 was used an run using a config yaml found in /software_infrastructure/Prometheus:
-```bash
-./prometheus --config.file=prometheus.yaml
-```
 Grafana 12 was configured to run as a docker container with a persistent volume and with exposed HTTP port 3000.
 Prometheus was added to Grafana as a data source.
 
