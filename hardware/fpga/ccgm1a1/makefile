@@ -1,6 +1,6 @@
-top_w5500_file=hdl/testbenches/top_w5500.vhd
-top_for_tb_w5500=hdl/testbenches/top_for_tb_w5500.vhd
-testbench_w5500=hdl/testbenches/tb_top_w5500.vhd
+top_w5500_file=testbenches/top_w5500.vhd
+top_for_tb_w5500=testbenches/top_for_tb_w5500.vhd
+testbench_w5500=testbenches/tb_top_w5500.vhd
 fsm = hdl/w5500/w5500_state_machine.vhd
 external_data_handler = hdl/w5500/ext_data_handler.vhd
 spi_master = hdl/w5500/spi_master.vhd
@@ -21,14 +21,14 @@ bram_threshold_lookup = hdl/data_concentrator/bram_threshold_lookup.vhd
 telemetry_sender = hdl/data_concentrator/telemetry_sender.vhd
 interlock_glitch_filter = hdl/data_concentrator/interlock_glitch_filter.vhd
 
-data_concentrator_testbench = hdl/testbenches/tb_data_concentrator.vhd
+data_concentrator_testbench = testbenches/tb_data_concentrator.vhd
 
-testbench_spimaster = hdl/testbenches/tb_spimaster.vhd
+testbench_spimaster = testbenches/tb_spimaster.vhd
 
 # TOP FILE FOR BOTH W5500 and DataConcentrator (instead of external Data handler)
 top_file = hdl/top.vhd
-top_for_tb_w5500_and_dc = hdl/testbenches/top_for_w5500_and_dc_tb.vhd
-tb_for_w5500_and_dc = hdl/testbenches/tb_top_w5500_and_dc.vhd
+top_for_tb_w5500_and_dc = testbenches/top_for_w5500_and_dc_tb.vhd
+tb_for_w5500_and_dc = testbenches/tb_top_w5500_and_dc.vhd
 
 verilog_net_export = net/top_synth.v
 design_json_export = design.json

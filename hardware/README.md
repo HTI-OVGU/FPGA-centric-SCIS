@@ -1,7 +1,7 @@
 
 ### VHDL workflow
 
-This folder contains the VHDL source files, constraints and a makefile to build the project for the CologneChip GateMate M1A1 FPGA Board.
+The FPGA/CCGM1A1 directory contains the VHDL source files, testbenches, constraints and a makefile to build the project for the CologneChip GateMate M1A1 FPGA Board.
 
 Tools within the [OSS-CAD-Suite](https://github.com/YosysHQ/oss-cad-suite-build/releases) by YoysyHQ (tested with Build 21-01-2026) have been used for synthesis, implementation, bitstream packing and bitstream uploading.
 
@@ -15,7 +15,7 @@ Inside the root directory of the OSS-CAD-Suite
 source environment
 ```
 
-Inside the HDL folder:
+Inside the CCGM1A1 folder:
 
 ```bash
 make all
