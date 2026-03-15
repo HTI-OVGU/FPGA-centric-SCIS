@@ -1,6 +1,6 @@
 # FPGA-centric Slow Control Interlock System (SCIS)
 
-This Project aims to build a Slow Control Interlock System, based on a Data Concentrator implemented on a Cologne Chip GateMate M1A1 FPGA and utilizing the W5500 Ethernet platform.
+This Project aims to build a Slow Control Interlock System, based on a Supervisory Monitoring Unit implemented on a Cologne Chip GateMate M1A1 FPGA and utilizing the W5500 Ethernet platform.
 
 ## Infrastructure overview
 ![SCIS Infrastructure](etc/figure/SCISinfrastructure.png)
