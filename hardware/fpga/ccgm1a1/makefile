@@ -1,40 +1,40 @@
-top_w5500_file=testbenches/top_w5500.vhd
-top_for_tb_w5500=testbenches/top_for_tb_w5500.vhd
-testbench_w5500=testbenches/tb_top_w5500.vhd
-fsm = hdl/w5500/w5500_state_machine.vhd
-external_data_handler = hdl/w5500/ext_data_handler.vhd
-spi_master = hdl/w5500/spi_master.vhd
-axis_data_fifo = hdl/axis_data_fifo.vhd
-data_streamer = hdl/w5500/spi_streamer.vhd
-stream_manager = hdl/w5500/w5500_stream_manager.vhd
-bram_dp_write_through = hdl/bram_dp_write_through.vhd
+top_w5500_file=../../testbenches/top_w5500.vhd
+top_for_tb_w5500=../../testbenches/top_for_tb_w5500.vhd
+testbench_w5500=../../testbenches/tb_top_w5500.vhd
+fsm = ../../hdl/w5500/w5500_state_machine.vhd
+external_data_handler = ../../hdl/w5500/ext_data_handler.vhd
+spi_master = ../../hdl/w5500/spi_master.vhd
+axis_data_fifo = ../../hdl/axis_data_fifo.vhd
+data_streamer = ../../hdl/w5500/spi_streamer.vhd
+stream_manager = ../../hdl/w5500/w5500_stream_manager.vhd
+bram_dp_write_through = ../../hdl/bram_dp_write_through.vhd
 
-metric_packet_stream_interface = hdl/data_concentrator/metric_packet_stream_interface.vhd
+metric_packet_stream_interface = ../../hdl/data_concentrator/metric_packet_stream_interface.vhd
 
-metric_packet_fifo = hdl/data_concentrator/metric_packet_fifo.vhd
-priority_axis_data_fifo = hdl/data_concentrator/priority_fifo.vhd
-data_concentrator = hdl/data_concentrator/data_concentrator.vhd
-udp_packet_adapter = hdl/data_concentrator/udp_packet_adapter.vhd
-metric_packet_manager = hdl/data_concentrator/metric_packet_manager.vhd
-threshold_logic = hdl/data_concentrator/threshold_logic.vhd 
-bram_threshold_lookup = hdl/data_concentrator/bram_threshold_lookup.vhd
-telemetry_sender = hdl/data_concentrator/telemetry_sender.vhd
-interlock_glitch_filter = hdl/data_concentrator/interlock_glitch_filter.vhd
+metric_packet_fifo = ../../hdl/data_concentrator/metric_packet_fifo.vhd
+priority_axis_data_fifo = ../../hdl/data_concentrator/priority_fifo.vhd
+data_concentrator = ../../hdl/data_concentrator/data_concentrator.vhd
+udp_packet_adapter = ../../hdl/data_concentrator/udp_packet_adapter.vhd
+metric_packet_manager = ../../hdl/data_concentrator/metric_packet_manager.vhd
+threshold_logic = ../../hdl/data_concentrator/threshold_logic.vhd 
+bram_threshold_lookup = ../../hdl/data_concentrator/bram_threshold_lookup.vhd
+telemetry_sender = ../../hdl/data_concentrator/telemetry_sender.vhd
+interlock_glitch_filter = ../../hdl/data_concentrator/interlock_glitch_filter.vhd
 
-data_concentrator_testbench = testbenches/tb_data_concentrator.vhd
+data_concentrator_testbench = ../../testbenches/tb_data_concentrator.vhd
 
-testbench_spimaster = testbenches/tb_spimaster.vhd
+testbench_spimaster = ../../testbenches/tb_spimaster.vhd
 
 # TOP FILE FOR BOTH W5500 and DataConcentrator (instead of external Data handler)
-top_file = hdl/top.vhd
-top_for_tb_w5500_and_dc = testbenches/top_for_w5500_and_dc_tb.vhd
-tb_for_w5500_and_dc = testbenches/tb_top_w5500_and_dc.vhd
+top_file = ../../hdl/top.vhd
+top_for_tb_w5500_and_dc = ../../testbenches/top_for_w5500_and_dc_tb.vhd
+tb_for_w5500_and_dc = ../../testbenches/tb_top_w5500_and_dc.vhd
 
 verilog_net_export = net/top_synth.v
 design_json_export = design.json
 
-constraints_file_w5500 = hdl/w5500.ccf
-constraints_file_all = hdl/constraints_dc_and_w5500.ccf
+constraints_file_w5500 = ../../hdl/w5500.ccf
+constraints_file_all = ../../hdl/constraints_dc_and_w5500.ccf
 impl_file = implementation.txt
 bit_file = bitstream.bit
 
