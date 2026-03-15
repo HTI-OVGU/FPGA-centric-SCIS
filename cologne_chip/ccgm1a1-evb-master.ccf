@@ -1,0 +1,248 @@
+#
+# This is the master CCF constraints file for the
+# Cologne Chip GateMate FPGA Evaluation Board
+# 
+# https://colognechip.com/programmable-logic/gatemate-evaluation-board/
+#
+# Date: 2024-07-18
+#
+# Syntax:
+# NET "<pin-name>" Loc = "<pin-location>" | <opt.-constraints>;
+#
+# Backward compatible legacy syntax:
+# <pin-direction> "<pin-name>" Loc = "<pin-location>" | <opt.-constraints>;
+#
+# Additional constraints can be appended using the pipe symbol.
+# Files are read line by line. Text after the hash symbol is ignored.
+#
+# Available legacy pin directions:
+#
+# Pin_in
+#   defines an input pin
+# Pin_out
+#   defines an output pin
+# Pin_triout
+#   defines a tristate output pin
+# Pin_inout
+#   defines a bidirectional pin
+#
+# Available pin constraints:
+#
+# SCHMITT_TRIGGER={true,false}
+#   enables or disables schmitt trigger (hysteresis) option
+# PULLUP={true,false}
+#   enables or disables I/O pullup resistor of nominal 50kOhm
+# PULLDOWN={true,false}
+#   enables or disables I/O pulldown resistor of nominal 50kOhm
+# KEEPER={true,false}
+#   enables or disables I/O keeper option
+# SLEW={slow,fast}
+#   sets slew rate to slow or fast
+# DRIVE={3,6,9,12}
+#   sets output drive strength to 3mA..12mA
+# DELAY_OBF={0..15}
+#   adds an additional delay of n * nominal 50ps to output signal
+# DELAY_IBF={0..15}
+#   adds an additional delay of n * nominal 50ps to input signal
+# FF_IBF={true,false}
+#   enables or disables placing of FF in input buffer, if possible
+# FF_OBF={true,false}
+#   enables or disables placing of FF in output buffer, if possible
+# LVDS_BOOST={true,false}
+#   enables increased LVDS output current of 6.4mA (default: 3.2mA)
+# LVDS_RTERM={true,false}
+#   enables on-chip LVDS termination resistor of nominal 100Ohm, in input mode only
+#
+# Global IO constraints can be set with the default_GPIO statement. It can be
+# overwritten by individual settings for specific GPIOs, e.g.:
+#   default_GPIO | DRIVE=3; # sets all output strengths to 3mA, unless overwritten
+#
+
+# GPIO Bank WA (Misc. Configuration)
+NET   "cfg_done"     Loc = "IO_WA_B2"; # CFG_DONE
+NET   "cfg_failed"   Loc = "IO_WA_A2"; # CFG_FAILED
+NET   "cfg_md[0]"    Loc = "IO_WA_A0";
+NET   "cfg_md[1]"    Loc = "IO_WA_B0";
+NET   "cfg_md[2]"    Loc = "IO_WA_A1";
+NET   "cfg_md[3]"    Loc = "IO_WA_B1";
+NET   "por_en"       Loc = "IO_WA_A3";
+NET   "spi_fwd"      Loc = "IO_WA_B5"; # unconnected
+
+# GPIO Bank WA (Serial Flash)
+NET   "flash_csb"    Loc = "IO_WA_A8";
+NET   "flash_clk"    Loc = "IO_WA_B8";
+NET   "flash_io0"    Loc = "IO_WA_B7";
+NET   "flash_io1"    Loc = "IO_WA_A7";
+NET   "flash_io2"    Loc = "IO_WA_B6";
+NET   "flash_io3"    Loc = "IO_WA_A6";
+
+# GPIO Bank WA (JTAG Interface)
+NET   "jtag_tck"     Loc = "IO_WA_A5";
+NET   "jtag_tms"     Loc = "IO_WA_B4";
+NET   "jtag_tdi"     Loc = "IO_WA_A4";
+NET   "jtag_tdo"     Loc = "IO_WA_B3";
+
+# SerDes Clock
+NET   "ser_clk"      Loc = "SER_CLK";   # dedicated clock input only
+NET   "ser_clk_n"    Loc = "SER_CLK_N"; # dedicated clock input only
+
+# GPIO Bank NA (1.2V..2.5V)
+NET   "io_na_a[0]"   Loc = "IO_NA_A0";
+NET   "io_na_b[0]"   Loc = "IO_NA_B0";
+NET   "io_na_a[1]"   Loc = "IO_NA_A1";
+NET   "io_na_b[1]"   Loc = "IO_NA_B1";
+NET   "io_na_a[2]"   Loc = "IO_NA_A2";
+NET   "io_na_b[2]"   Loc = "IO_NA_B2";
+NET   "io_na_a[3]"   Loc = "IO_NA_A3";
+NET   "io_na_b[3]"   Loc = "IO_NA_B3";
+NET   "io_na_a[4]"   Loc = "IO_NA_A4";
+NET   "io_na_b[4]"   Loc = "IO_NA_B4";
+NET   "io_na_a[5]"   Loc = "IO_NA_A5";
+NET   "io_na_b[5]"   Loc = "IO_NA_B5";
+NET   "io_na_a[6]"   Loc = "IO_NA_A6";
+NET   "io_na_b[6]"   Loc = "IO_NA_B6";
+NET   "io_na_a[7]"   Loc = "IO_NA_A7";
+NET   "io_na_b[7]"   Loc = "IO_NA_B7";
+NET   "io_na_a[8]"   Loc = "IO_NA_A8";
+NET   "io_na_b[8]"   Loc = "IO_NA_B8";
+
+# GPIO Bank NB (Pmod Header A)
+NET   "pmod_a_io[0]" Loc = "IO_NB_A0";
+NET   "pmod_a_io[1]" Loc = "IO_NB_A1";
+NET   "pmod_a_io[2]" Loc = "IO_NB_A2";
+NET   "pmod_a_io[3]" Loc = "IO_NB_A3";
+NET   "pmod_a_io[4]" Loc = "IO_NB_B0";
+NET   "pmod_a_io[5]" Loc = "IO_NB_B1";
+NET   "pmod_a_io[6]" Loc = "IO_NB_B2";
+NET   "pmod_a_io[7]" Loc = "IO_NB_B3";
+
+# GPIO Bank NB (Pmod Header B)
+NET   "pmod_b_io[0]" Loc = "IO_NB_A4";
+NET   "pmod_b_io[1]" Loc = "IO_NB_A5";
+NET   "pmod_b_io[2]" Loc = "IO_NB_A6";
+NET   "pmod_b_io[3]" Loc = "IO_NB_A7";
+NET   "pmod_b_io[4]" Loc = "IO_NB_B4";
+NET   "pmod_b_io[5]" Loc = "IO_NB_B5";
+NET   "pmod_b_io[6]" Loc = "IO_NB_B6";
+NET   "pmod_b_io[7]" Loc = "IO_NB_B7";
+
+NET   "io_nb_a[8]"   Loc = "IO_NB_A8"; # unconnected
+NET   "io_nb_b[8]"   Loc = "IO_NB_B8"; # unconnected
+
+# GPIO Bank EA (1.2V..2.5V)
+NET   "io_ea_a[0]"   Loc = "IO_EA_A0";
+NET   "io_ea_b[0]"   Loc = "IO_EA_B0";
+NET   "io_ea_a[1]"   Loc = "IO_EA_A1";
+NET   "io_ea_b[1]"   Loc = "IO_EA_B1";
+NET   "io_ea_a[2]"   Loc = "IO_EA_A2";
+NET   "io_ea_b[2]"   Loc = "IO_EA_B2";
+NET   "io_ea_a[3]"   Loc = "IO_EA_A3";
+NET   "io_ea_b[3]"   Loc = "IO_EA_B3";
+NET   "io_ea_a[4]"   Loc = "IO_EA_A4";
+NET   "io_ea_b[4]"   Loc = "IO_EA_B4";
+NET   "io_ea_a[5]"   Loc = "IO_EA_A5";
+NET   "io_ea_b[5]"   Loc = "IO_EA_B5";
+NET   "io_ea_a[6]"   Loc = "IO_EA_A6";
+NET   "io_ea_b[6]"   Loc = "IO_EA_B6";
+NET   "io_ea_a[7]"   Loc = "IO_EA_A7";
+NET   "io_ea_b[7]"   Loc = "IO_EA_B7";
+NET   "io_ea_a[8]"   Loc = "IO_EA_A8";
+NET   "io_ea_b[8]"   Loc = "IO_EA_B8";
+
+# GPIO Bank EB (1.2V..2.5V)
+NET   "io_eb_a[0]"   Loc = "IO_EB_A0";
+NET   "io_eb_b[0]"   Loc = "IO_EB_B0"; # Push Button SW3
+NET   "io_eb_a[1]"   Loc = "IO_EB_A1";
+NET   "io_eb_b[1]"   Loc = "IO_EB_B1"; # LED D1
+NET   "io_eb_a[2]"   Loc = "IO_EB_A2";
+NET   "io_eb_b[2]"   Loc = "IO_EB_B2"; # LED D2
+NET   "io_eb_a[3]"   Loc = "IO_EB_A3";
+NET   "io_eb_b[3]"   Loc = "IO_EB_B3"; # LED D3
+NET   "io_eb_a[4]"   Loc = "IO_EB_A4";
+NET   "io_eb_b[4]"   Loc = "IO_EB_B4"; # LED D4
+NET   "io_eb_a[5]"   Loc = "IO_EB_A5";
+NET   "io_eb_b[5]"   Loc = "IO_EB_B5"; # LED D5
+NET   "io_eb_a[6]"   Loc = "IO_EB_A6";
+NET   "io_eb_b[6]"   Loc = "IO_EB_B6"; # LED D6
+NET   "io_eb_a[7]"   Loc = "IO_EB_A7";
+NET   "io_eb_b[7]"   Loc = "IO_EB_B7"; # LED D7
+NET   "io_eb_a[8]"   Loc = "IO_EB_A8";
+NET   "io_eb_b[8]"   Loc = "IO_EB_B8"; # LED D8
+
+# GPIO Bank SA (2.5V)
+NET   "io_sa_a[0]"   Loc = "IO_SA_A0";
+NET   "io_sa_b[0]"   Loc = "IO_SA_B0";
+NET   "io_sa_a[1]"   Loc = "IO_SA_A1";
+NET   "io_sa_b[1]"   Loc = "IO_SA_B1";
+NET   "io_sa_a[2]"   Loc = "IO_SA_A2";
+NET   "io_sa_b[2]"   Loc = "IO_SA_B2";
+NET   "io_sa_a[3]"   Loc = "IO_SA_A3";
+NET   "io_sa_b[3]"   Loc = "IO_SA_B3";
+NET   "io_sa_a[4]"   Loc = "IO_SA_A4";
+NET   "io_sa_b[4]"   Loc = "IO_SA_B4";
+NET   "io_sa_a[5]"   Loc = "IO_SA_A5";
+NET   "io_sa_b[5]"   Loc = "IO_SA_B5";
+NET   "io_sa_a[6]"   Loc = "IO_SA_A6";
+NET   "io_sa_b[6]"   Loc = "IO_SA_B6";
+NET   "io_sa_a[7]"   Loc = "IO_SA_A7";
+NET   "io_sa_b[7]"   Loc = "IO_SA_B7";
+NET   "io_sa_a[8]"   Loc = "IO_SA_A8";
+NET   "io_sa_b[8]"   Loc = "IO_SA_B8";
+
+# GPIO Bank SB (2.5V)
+NET   "io_sb_a[0]"   Loc = "IO_SB_A0";
+NET   "io_sb_b[0]"   Loc = "IO_SB_B0";
+NET   "io_sb_a[1]"   Loc = "IO_SB_A1";
+NET   "io_sb_b[1]"   Loc = "IO_SB_B1";
+NET   "io_sb_a[2]"   Loc = "IO_SB_A2";
+NET   "io_sb_b[2]"   Loc = "IO_SB_B2";
+NET   "io_sb_a[3]"   Loc = "IO_SB_A3";
+NET   "io_sb_b[3]"   Loc = "IO_SB_B3";
+NET   "io_sb_a[4]"   Loc = "IO_SB_A4";
+NET   "io_sb_b[4]"   Loc = "IO_SB_B4";
+NET   "io_sb_a[5]"   Loc = "IO_SB_A5"; # Clock3
+NET   "io_sb_b[5]"   Loc = "IO_SB_B5";
+NET   "io_sb_a[6]"   Loc = "IO_SB_A6"; # Clock2
+NET   "io_sb_b[6]"   Loc = "IO_SB_B6";
+NET   "io_sb_a[7]"   Loc = "IO_SB_A7"; # Clock1
+NET   "io_sb_b[7]"   Loc = "IO_SB_B7";
+NET   "io_sb_a[8]"   Loc = "IO_SB_A8"; # Clock0
+NET   "io_sb_b[8]"   Loc = "IO_SB_B8";
+
+# GPIO Bank WB (HyperBus)
+NET   "hb_cs0_n"     Loc = "IO_WB_B0";
+NET   "hb_cs1_n"     Loc = "IO_WB_B1"; # unpopulated, for opt. HyperFlash
+NET   "hb_clk"       Loc = "IO_WB_A3";
+NET   "hb_clk_n"     Loc = "IO_WB_B3";
+NET   "hb_rwds"      Loc = "IO_WB_B4";
+NET   "hb_dq[0]"     Loc = "IO_WB_A5";
+NET   "hb_dq[1]"     Loc = "IO_WB_B5";
+NET   "hb_dq[2]"     Loc = "IO_WB_A6";
+NET   "hb_dq[3]"     Loc = "IO_WB_B6";
+NET   "hb_dq[4]"     Loc = "IO_WB_A7";
+NET   "hb_dq[5]"     Loc = "IO_WB_B7";
+NET   "hb_dq[6]"     Loc = "IO_WB_A8";
+NET   "hb_dq[7]"     Loc = "IO_WB_B8";
+NET   "hb_resetn"    Loc = "IO_WB_A2";
+NET   "hb_int_n"     Loc = "IO_WB_B2"; # unpopulated, for opt. HyperFlash
+NET   "hb_rsto_n"    Loc = "IO_WB_A1"; # unpopulated, for opt. HyperFlash
+
+# GPIO Bank WC (1.2V..2.5V)
+NET   "io_wc_a[0]"   Loc = "IO_WC_A0";
+NET   "io_wc_b[0]"   Loc = "IO_WC_B0";
+NET   "io_wc_a[1]"   Loc = "IO_WC_A1";
+NET   "io_wc_b[1]"   Loc = "IO_WC_B1";
+NET   "io_wc_a[2]"   Loc = "IO_WC_A2";
+NET   "io_wc_b[2]"   Loc = "IO_WC_B2";
+NET   "io_wc_a[3]"   Loc = "IO_WC_A3";
+NET   "io_wc_b[3]"   Loc = "IO_WC_B3";
+NET   "io_wc_a[4]"   Loc = "IO_WC_A4";
+NET   "io_wc_b[4]"   Loc = "IO_WC_B4";
+NET   "io_wc_a[5]"   Loc = "IO_WC_A5";
+NET   "io_wc_b[5]"   Loc = "IO_WC_B5";
+NET   "io_wc_a[6]"   Loc = "IO_WC_A6";
+NET   "io_wc_b[6]"   Loc = "IO_WC_B6";
+NET   "io_wc_a[7]"   Loc = "IO_WC_A7";
+NET   "io_wc_b[7]"   Loc = "IO_WC_B7";
+NET   "io_wc_a[8]"   Loc = "IO_WC_A8";
+NET   "io_wc_b[8]"   Loc = "IO_WC_B8";
