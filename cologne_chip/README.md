@@ -96,6 +96,9 @@ Using the `--router2-tmg-ripup` flag lets the place and route tool attempt to im
 This should generate an "implementation.txt" file, being human readable.
 The next step is to pack it up into a bitstream ready for uploading.
 
+Should the place and route tool not converge to a placement/routing solution, reattempt with another random-seed or try lowering the PLL's output frequency for the hardware design.
+If it still does not converge, check for cyclic paths in combinational logic.
+
 ### Bitstream generation
 
 `gmpack --input [implementation.txt] --bit [bitstream.bit] --crcmode=check --spimode=quad`

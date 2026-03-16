@@ -1,4 +1,4 @@
-top_w5500_file=../../testbenches/top_w5500.vhd
+top_w5500_file=../../hdl/w5500/top_w5500.vhd
 top_for_tb_w5500=../../testbenches/top_for_tb_w5500.vhd
 testbench_w5500=../../testbenches/tb_top_w5500.vhd
 fsm = ../../hdl/w5500/w5500_state_machine.vhd
@@ -30,7 +30,7 @@ top_file = ../../hdl/top.vhd
 top_for_tb_w5500_and_dc = ../../testbenches/top_for_w5500_and_dc_tb.vhd
 tb_for_w5500_and_dc = ../../testbenches/tb_top_w5500_and_dc.vhd
 
-verilog_net_export = net/top_synth.v
+verilog_net_export = top_synth.v
 design_json_export = design.json
 
 constraints_file_w5500 = ../../hdl/w5500.ccf

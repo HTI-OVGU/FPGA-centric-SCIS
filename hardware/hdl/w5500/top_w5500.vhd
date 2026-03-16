@@ -167,7 +167,7 @@ begin
     socket_pll : CC_PLL
 	generic map (
 		REF_CLK         => "10.0",
-		OUT_CLK         => "40.0",
+		OUT_CLK         => "20.0",
 		PERF_MD         => "ECONOMY",
 		LOW_JITTER      => 1,
 		CI_FILTER_CONST => 2,

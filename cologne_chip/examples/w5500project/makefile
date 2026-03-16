@@ -45,7 +45,15 @@ upload_spi:
 	openFPGALoader -b gatemate_evb_spi $(bit_file)
 
 all:
+	make clean;
 	make synth;
 	make impl;
 	make gmpack;
 	make upload_jtag;
+
+clean:
+	rm -f $(bit_file)
+	rm -f *.o
+	rm -f $(design_json_export)
+	rm -f $(impl_file) 
+	rm -f $(verilog_net_export)
