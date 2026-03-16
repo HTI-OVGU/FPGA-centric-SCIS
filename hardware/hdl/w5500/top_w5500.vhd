@@ -162,13 +162,13 @@ architecture Behavioral of top_w5500 is
 
 begin
     
-	reset <= not pll_locked;
+	reset <= not pll_locked or not button;
 
     socket_pll : CC_PLL
 	generic map (
 		REF_CLK         => "10.0",
-		OUT_CLK         => "20.0",
-		PERF_MD         => "ECONOMY",
+		OUT_CLK         => "40.0",
+		PERF_MD         => "SPEED",
 		LOW_JITTER      => 1,
 		CI_FILTER_CONST => 2,
 		CP_FILTER_CONST => 4

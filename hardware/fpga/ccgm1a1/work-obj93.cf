@@ -1,0 +1,69 @@
+v 4
+file . "../../hdl/data_concentrator/telemetry_sender.vhd" "692773052be0365f5f009c562eba0b0fdb1f7d09" "20260316074029.754":
+  entity telemetry_sender at 1( 0) + 0 on 76;
+  architecture behavioral of telemetry_sender at 25( 859) + 0 on 77;
+file . "../../hdl/data_concentrator/threshold_logic.vhd" "7bc1097e48ed979b03e3fe5ee993db78c0c49617" "20260316074029.537":
+  entity threshold_logic at 1( 0) + 0 on 72;
+  architecture behavioral of threshold_logic at 26( 771) + 0 on 73;
+file . "../../hdl/data_concentrator/metric_packet_manager.vhd" "87109995dba1da04639b901c485aa7b62b21a77b" "20260316074029.110":
+  entity metric_packet_manager at 1( 0) + 0 on 68;
+  architecture behavioral of metric_packet_manager at 22( 700) + 0 on 69;
+file . "../../hdl/data_concentrator/udp_packet_adapter.vhd" "2ef147455472ab3e94630fc75b13140faebc9867" "20260316074028.886":
+  entity udp_packet_adapter at 1( 0) + 0 on 64;
+  architecture behavioral of udp_packet_adapter at 25( 716) + 0 on 65;
+file . "../../hdl/data_concentrator/metric_packet_fifo.vhd" "c6f053a0cf5350693151b06b07dc28597c26fdf3" "20260316074028.571":
+  entity metric_packet_fifo at 1( 0) + 0 on 60;
+  architecture rtl of metric_packet_fifo at 31( 851) + 0 on 61;
+file . "../../hdl/data_concentrator/priority_fifo.vhd" "929e93059c4799240e1c0316d8beed8e6d7352d0" "20260316074027.684":
+  entity priority_axis_data_fifo at 1( 0) + 0 on 48;
+  architecture rtl of priority_axis_data_fifo at 29( 897) + 0 on 49;
+file . "../../testbenches/top_for_w5500_and_dc_tb.vhd" "9791d09b96f875f44c58df13b6f27ed68dc0c046" "20260316074027.021":
+  entity top_for_tb_w5500_and_dc at 23( 586) + 0 on 40;
+  architecture behavioral of top_for_tb_w5500_and_dc at 43( 1019) + 0 on 41;
+file . "../../hdl/data_concentrator/metric_packet_stream_interface.vhd" "1967cd340ac684465749c86b914abba3c60fa472" "20260316074026.867":
+  package metric_axi_stream_pkg at 2( 32) + 0 on 37;
+file . "../../testbenches/tb_spimaster.vhd" "a7c80bebc0900acd5ff0cb92578ee55ef380eec3" "20260316073950.287":
+  entity spi_master_tb at 6( 292) + 0 on 29;
+  architecture testbench of spi_master_tb at 13( 413) + 0 on 30;
+file . "../../hdl/w5500/spi_streamer.vhd" "33bde415adb03c1e84991e6c0951b94d66965d39" "20260316074028.037":
+  entity w5500_axi_data_streamer at 1( 0) + 0 on 52;
+  architecture behavioral of w5500_axi_data_streamer at 39( 1420) + 0 on 53;
+file . "../../hdl/w5500/spi_master.vhd" "d750429e980190a9504505db3e20851031eaded4" "20260316074027.574":
+  entity spi_master at 7( 334) + 0 on 46;
+  architecture behavioral of spi_master at 31( 1022) + 0 on 47;
+file . "../../hdl/w5500/w5500_state_machine.vhd" "db7fc8060cf36a1b17e7eaa8e0d7386c41d4658a" "20260316074027.118":
+  entity w5500_state_machine at 1( 0) + 0 on 42;
+  architecture behavioral of w5500_state_machine at 45( 1838) + 0 on 43;
+file . "../../testbenches/tb_top_w5500.vhd" "7040466d1937cad03454711642c012fe3e9c77fd" "20260316073939.427":
+  entity tb_top_w5500 at 1( 0) + 0 on 13;
+  architecture sim of tb_top_w5500 at 7( 86) + 0 on 14;
+file . "../../hdl/bram_dp_write_through.vhd" "d031ad5fd85740e0f083de10411a17eb0c7b22e9" "20260316074029.012":
+  entity bram_dp_write_through at 1( 0) + 0 on 66;
+  architecture rtl of bram_dp_write_through at 23( 692) + 0 on 67;
+file . "../../testbenches/top_for_tb_w5500.vhd" "05d17a7a25b1ac4709f094c6210447a734b98740" "20260316073939.527":
+  entity top_for_tb_w5500 at 23( 586) + 0 on 15;
+  architecture behavioral of top_for_tb_w5500 at 41( 968) + 0 on 16;
+file . "../../hdl/w5500/ext_data_handler.vhd" "8db696fe1461113a707ac65bee216472713361ff" "20260316074027.447":
+  entity ext_data_handler at 20( 469) + 0 on 44;
+  architecture behavioral of ext_data_handler at 53( 1561) + 0 on 45;
+file . "../../hdl/axis_data_fifo.vhd" "ba4f20ce7bbc44d1a4290db0fa8576fdb0a4fbfd" "20260316074027.870":
+  entity axis_data_fifo at 1( 0) + 0 on 50;
+  architecture rtl of axis_data_fifo at 28( 836) + 0 on 51;
+file . "../../hdl/w5500/w5500_stream_manager.vhd" "43bf78daa8602871603f7c8ba56b68f6505f31b7" "20260316074028.147":
+  entity w5500_stream_manager at 3( 189) + 0 on 54;
+  architecture behavioral of w5500_stream_manager at 49( 2077) + 0 on 55;
+file . "../../testbenches/tb_top_w5500_and_dc.vhd" "232d0abdafb5c66b716a1bff0450dfe1d695507b" "20260316074026.947":
+  entity tb_top_w5500_and_dc at 1( 0) + 0 on 38;
+  architecture sim of tb_top_w5500_and_dc at 7( 100) + 0 on 39;
+file . "../../testbenches/tb_data_concentrator.vhd" "6a995eb8dfbd7d4304903cab128b7b876218b4c2" "20260316074028.410":
+  entity data_concentrator_tb at 1( 0) + 0 on 58;
+  architecture behavioral of data_concentrator_tb at 9( 164) + 0 on 59;
+file . "../../hdl/data_concentrator/data_concentrator.vhd" "cf2ae20ac512fe5b18204123c3bc8a1b1af8d9e5" "20260316074028.758":
+  entity data_concentrator at 1( 0) + 0 on 62;
+  architecture behavioral of data_concentrator at 28( 929) + 0 on 63;
+file . "../../hdl/data_concentrator/bram_threshold_lookup.vhd" "e745a202b6fa548c3c9b27c37d345cd38e24e380" "20260316074029.431":
+  entity threshold_lookup_bram at 1( 0) + 0 on 70;
+  architecture rtl of threshold_lookup_bram at 23( 689) + 0 on 71;
+file . "../../hdl/data_concentrator/interlock_glitch_filter.vhd" "43cbbc62907dad3dbb17a9c34782a08a0236cd53" "20260316074029.666":
+  entity interlock_glitch_filter at 1( 0) + 0 on 74;
+  architecture behavioral of interlock_glitch_filter at 15( 338) + 0 on 75;

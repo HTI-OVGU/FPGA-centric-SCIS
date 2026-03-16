@@ -112,7 +112,7 @@ synth_w5500_and_dc:
 
 
 impl:
-	nextpnr-himbaechel --device=CCGM1A1 --json $(design_json_export) -o ccf=$(constraints_file_all) -o out=$(impl_file) --router router2 --router2-tmg-ripup -o fpga_mode=speed --routed-svg routed.svg --placed-svg placed.svg --parallel-refine --threads 4
+	nextpnr-himbaechel --device=CCGM1A1 --json $(design_json_export) -o ccf=$(constraints_file_all) -o out=$(impl_file) --router router2 --parallel-refine --threads 4
 
 
 impl_w5500:
@@ -212,3 +212,4 @@ custom_synth_gatemate:
 	write_json $(design_json_export)"
 # 	yosys -p "read_verilog -lib -specify +/gatemate/cells_sim.v +/gatemate/cells_bb.v;"
 # 	yosys -p "hierarchy -check -top top"
+

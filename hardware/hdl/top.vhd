@@ -215,7 +215,7 @@ architecture Behavioral of top is
 	signal data_concentrator_input_vector : metric_axi_stream_array_t(0 downto 0);
 	signal data_concentrator_ready_input_vector : std_logic_vector(0 downto 0);
 
-	signal not_reset: STD_LOGIC;
+	signal reset: STD_LOGIC;
 	signal pll_locked : STD_LOGIC;
 
 	signal interlock_0 : std_logic;
@@ -224,7 +224,7 @@ begin
 	process(clk0)
 	begin 
 		if(rising_edge(clk0)) then 
-			not_reset <= not pll_locked;
+			reset <= not pll_locked;
 		end if;
 	end process;
 
@@ -264,7 +264,7 @@ begin
   		)
         port map(
             clk => clk0,
-            reset => not_reset,
+            reset => reset,
             spi_busy => spi_busy_0,
             tdata => tdata_0,  
             tvalid => tvalid_0,
@@ -298,7 +298,7 @@ begin
   		)
         port map(
             clk => clk0,
-            reset => not_reset,
+            reset => reset,
             spi_busy => spi_busy_1,
             tdata => tdata_1,  
             tvalid => tvalid_1,
@@ -325,7 +325,7 @@ begin
     tx_spi_master : spi_master
         port map(
             clk => clk0,
-			reset => not_reset,
+			reset => reset,
 			mosi => mosi_0,
 			miso => miso_0,
 			sclk => sclk_0,
@@ -344,7 +344,7 @@ begin
 	rx_spi_master : spi_master
         port map(
             clk => clk0,
-			reset => not_reset,
+			reset => reset,
 			mosi => mosi_1,
 			miso => miso_1,
 			sclk => sclk_1,
@@ -363,7 +363,7 @@ begin
 	unit_udp_packet_adapter : udp_packet_adapter
      port map(
         clk => clk0,
-        reset => not_reset,
+        reset => reset,
         rdata => ext_pl_rdata_1,
         rlast => ext_pl_rlast_1,
         rvalid => ext_pl_rvalid_1,
@@ -387,7 +387,7 @@ begin
     	)
         port map(
             clk => clk0,
-            reset => not_reset,
+            reset => reset,
             tdata => ext_pl_tdata_0,
             tvalid => ext_pl_tvalid_0,
             tlast => ext_pl_tlast_0,
