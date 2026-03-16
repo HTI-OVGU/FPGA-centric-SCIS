@@ -1,6 +1,8 @@
 # GATEMATE CCGM1A1 Full workflow for VHDL projects
 This repository refers to the oss-cad-suite (December 2025) provided by GateMate/Cologne Chip and explains VHDL synthesis, implementation (place and route), Bitstream generation and Bitstream Upload towards the GateMate CCGM1A1-E1 Evaluation Board.
 
+Notice: This documentation started a few weeks before Cologne Chip released a new official [Quickstart Guide](https://colognechip.com/programmable-logic/gatemate/gatemate-toolchain-quickstart/) after migrating to the nextpnr implementation tool in 2025.
+
 > Please download the OSS-CAD-SUITE first! This guide refers to a workflow inside this toolchain. It can be found here:
 > https://github.com/YosysHQ/oss-cad-suite-build/releases
 
@@ -97,7 +99,8 @@ This should generate an "implementation.txt" file, being human readable.
 The next step is to pack it up into a bitstream ready for uploading.
 
 Should the place and route tool not converge to a placement/routing solution, reattempt with another random-seed or try lowering the PLL's output frequency for the hardware design.
-If it still does not converge, check for cyclic paths in combinational logic.
+If it still does not converge, check for cyclic paths in combinational logic and confirm that ALL top-entity ports are in use and setup in the constraints file.
+
 
 ### Bitstream generation
 

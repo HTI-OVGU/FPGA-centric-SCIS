@@ -172,7 +172,7 @@ begin
 	generic map (
 		REF_CLK         => "10.0",
 		OUT_CLK         => "10.0",
-		PERF_MD         => "ECONOMY",
+		PERF_MD         => "SPEED",
 		LOW_JITTER      => 1,
 		CI_FILTER_CONST => 2,
 		CP_FILTER_CONST => 4

@@ -7,6 +7,7 @@ txrx_unit = hdl/spi_master.vhd
 custom_fifo = hdl/custom_fifo.vhd
 data_streamer = hdl/spi_streamer.vhd
 stream_manager = hdl/w5500_stream_manager.vhd
+bram_dp_writethrough = hdl/bram_dp_write_through.vhd
 
 verilog_net_export = net/top_synth.v
 design_json_export = design.json
@@ -19,6 +20,7 @@ sim:
 	ghdl -a $(testbench)
 	ghdl -a $(top_for_tb);
 	ghdl -a $(fsm);
+	ghdl -a $(bram_dp_writethrough);
 	ghdl -a $(external_data_handler);
 	ghdl -a $(txrx_unit);
 	ghdl -a $(custom_fifo);
@@ -30,7 +32,7 @@ sim:
 
 
 synth:
-	yosys -m ghdl -p "ghdl --warn-no-binding --ieee=synopsys --std=08 --latches $(top_file) $(fsm) $(external_data_handler) $(txrx_unit) $(custom_fifo) $(data_streamer) $(stream_manager) -e top; synth_gatemate -top top -vlog $(verilog_net_export)  -nomx8 -luttree; write_json  $(design_json_export)"
+	yosys -m ghdl -p "ghdl -fexplicit --warn-no-binding --ieee=synopsys --std=08 -frelaxed  $(top_file) $(fsm) $(bram_dp_writethrough) $(external_data_handler) $(txrx_unit) $(custom_fifo) $(data_streamer) $(stream_manager) -e top_w5500; synth_gatemate -top top_w5500 -vlog $(verilog_net_export)  -nomx8 -luttree; write_json  $(design_json_export)"
 
 impl:
 	nextpnr-himbaechel --device=CCGM1A1 --json $(design_json_export) -o ccf=$(constraints_file) -o out=$(impl_file) --router router2
