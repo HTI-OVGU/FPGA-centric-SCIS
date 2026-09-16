@@ -4,6 +4,8 @@ import random
 import time
 import threading
 
+# Dual-W5500 FPGA: metric packets are INGESTED by the RX chip at 192.168.2.100.
+# (The TX chip at 192.168.2.101 only emits telemetry back to the host at .106.)
 TARGET_IP = "192.168.2.100"
 PROTOCOL_CODE = b"V01"  # HEX 56, 30, 31
 
@@ -38,15 +40,25 @@ def device_worker(port, device_id, mean, std_dev, interval):
 # --- Configuration List ---
 # Format: (Port, Device ID, Mean, Std Dev, Interval in Seconds)
 DEVICES = [
-    (9217, 101, 24.0, 0.5, 1.0),  # Port 9217 sends every 1 second
-    (9218, 102, 400.0, 2.1, 0.5),  # Port 9218 sends every 0.5 seconds
-    (9219, 103, 12.4, 0.1, 2.0),
-    (9220, 104, 50.0, 10.0, 0.2),
-    (9221, 105, -3.0, 1.0, 1.0),
-    (9222, 106, 50.0, 5.0, 3.0),
+    (9217, 101, 24.0, 0.5, 0.0001),  # Port 9217 sends every 1 second
+    (9218, 102, 400.0, 2.1, 0.0005),  # Port 9218 sends every 0.5 seconds
+    (9219, 103, 12.4, 0.1, 0.0002),
+    (9220, 104, 50.0, 10.0, 0.002),
+    (9221, 105, -3.0, 1.0, 0.00),
+    (9222, 106, 50.0, 5.0, 0.003),
     (9223, 107, 10.2, 0.2, 0.8),
-    (9224, 108, -270.0, 0.5, 1.5),
+    (9224, 108, -270.0, 0.5, 0.015),
 ]
+# DEVICES = [
+#     (9217, 101, 24.0, 0.5, 1.0),  # Port 9217 sends every 1 second
+#     (9218, 102, 400.0, 2.1, 0.5),  # Port 9218 sends every 0.5 seconds
+#     (9219, 103, 12.4, 0.1, 2.0),
+#     (9220, 104, 50.0, 10.0, 0.2),
+#     (9221, 105, -3.0, 1.0, 1.0),
+#     (9222, 106, 50.0, 5.0, 3.0),
+#     (9223, 107, 10.2, 0.2, 0.8),
+#     (9224, 108, -270.0, 0.5, 1.5),
+# ]
 
 if __name__ == "__main__":
     print(f"Initializing transmission to {TARGET_IP}...")

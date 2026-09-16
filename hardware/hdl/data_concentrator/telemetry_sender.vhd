@@ -101,23 +101,30 @@ begin
         end if;
     end process;
 
-    --tready process async
-    process (clk, reset) 
-    begin 
-        if(reset = '1') then 
+    --tready process async (combinational: sensitive to the signals it reads, not clk)
+    process (reset, alert_sender_state, m_axis_ready)
+    begin
+        if(reset = '1') then
             s_axis_ready <= '0';
         else   
-            case alert_sender_state is   
+            case alert_sender_state is
                 when SEND_INTERLOCK_ALERT => s_axis_ready <= '0';
                 when SEND_ALMOST_FULL_ALERT => s_axis_ready <= '0';
-                when others =>  s_axis_ready <= m_axis_ready;
+                -- IDLE is a 1-cycle check state that forwards nothing (m_axis_valid=0);
+                -- holding ready '0' here keeps the upstream's first byte until
+                -- PASSTHROUGH, otherwise byte 0 ('V') of every packet is consumed and lost.
+                when IDLE => s_axis_ready <= '0';
+                when others =>  s_axis_ready <= m_axis_ready;   -- PASSTHROUGH
             end case;
         end if;
     end process;
 
-    -- async process writing interlock_Sequence or PASSTHROUGH
-    process (reset, alert_sender_state)
-    begin 
+    -- async process writing interlock_Sequence or PASSTHROUGH (combinational mux:
+    -- must be sensitive to every signal it reads, or in PASSTHROUGH it latches the
+    -- first s_axis_data and repeats it -- the telemetry-drain bug).
+    process (reset, alert_sender_state, alert_sequence_counter,
+             s_axis_data, s_axis_user, s_axis_valid, s_axis_last)
+    begin
         if reset = '1' then 
             m_axis_data <= x"00";
             m_axis_valid <= '0';

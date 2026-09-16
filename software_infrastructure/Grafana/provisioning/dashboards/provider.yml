@@ -1,0 +1,14 @@
+# Loads dashboard JSON files bind-mounted at /var/lib/grafana/dashboards.
+apiVersion: 1
+
+providers:
+  - name: SCIS
+    orgId: 1
+    folder: SCIS
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards
+      foldersFromFilesStructure: false

@@ -29,8 +29,24 @@ end metric_packet_fifo;
 
 
 architecture rtl of metric_packet_fifo is
-  -- Calculate address width based on FIFO depth
-  constant c_ADDR_WIDTH : natural := natural(9);
+  -- Address width is DERIVED from the depth, never written by hand. When the two
+  -- disagree the pointers are silently narrower than g_DEPTH, `write_ptr =
+  -- g_DEPTH - 1` becomes unreachable, and the FIFO wraps early and overwrites
+  -- unread entries while still reporting "not full". That bug shipped twice:
+  -- here (9 bits for 1023) and in priority_fifo (10 bits for 2047).
+  -- tb_mpf_wrap covers it.
+  function clog2(n : natural) return natural is
+    variable r : natural := 0;
+    variable v : natural := n - 1;
+  begin
+    while v > 0 loop
+      r := r + 1;
+      v := v / 2;
+    end loop;
+    return r;
+  end function;
+
+  constant c_ADDR_WIDTH : natural := clog2(g_DEPTH + 1);
   
   -- Internal signals for BRAM interface
   signal bram_wea    : std_logic;
@@ -67,7 +83,6 @@ architecture rtl of metric_packet_fifo is
   signal current_candidate_valid : std_logic;
   signal current_candidate_data : std_logic_vector(g_WIDTH-1 downto 0);
   signal current_candidate_has_been_read : std_logic;
-  signal prev_current_candidate_has_been_read : std_logic;
 
   signal prefetch_reg     : std_logic_vector(g_WIDTH-1 downto 0) := (others => '0');
   signal prefetch_valid   : std_logic := '0';
@@ -204,19 +219,16 @@ begin
   
   current_candidate_has_been_read <= m_axis_tvalid_reg and m_axis_tready; -- axis handshake
 
-  process (i_clk)
-  begin
-    if rising_edge(i_clk) then
-      if(current_candidate_has_been_read = '1' and prev_current_candidate_has_been_read = '1') then
-        burst_read_mode <= '1';
-      end if;
-      
-      if(m_axis_tlast_reg = '1' and m_axis_tvalid_reg = '1' and m_axis_tready = '1') then
-        burst_read_mode <= '0';
-      end if;
-      prev_current_candidate_has_been_read <= current_candidate_has_been_read;
-    end if;
-  end process;
+  -- Burst read path disabled -- same defect as axis_data_fifo, same module
+  -- copied. It latched after two back-to-back reads and then drove the output
+  -- from prefetch_reg with m_axis_tvalid <= prefetch_valid, while every
+  -- assignment that clears prefetch_valid is guarded by burst_read_mode = '0'.
+  -- Nothing retired the word, so an empty FIFO went on asserting tvalid with
+  -- the last word it fetched and a ready consumer took it again every clock.
+  -- On the wire that shows up as a byte repeated fifteen to thirty times in the
+  -- middle of a metric packet. What is left is an ordinary skid buffer, correct
+  -- when empty, and far faster than anything downstream of it can consume.
+  burst_read_mode <= '0';
 
 
   m_axis_tuser_reg <= current_candidate_data(2 downto 0) when burst_read_mode = '0' else prefetch_reg(2 downto 0);
@@ -247,7 +259,14 @@ begin
             -- move prefetch to dout and keep valid high (no bubble)
             current_candidate_data       <= prefetch_reg;
             current_candidate_valid     <= '1';
-            prefetch_valid <= '0';
+            -- A word from BRAM may be landing in prefetch_reg this very cycle
+            -- (the block above). Clearing the flag unconditionally would
+            -- overwrite that '1' and drop the word.
+            if delayed_read_en = '1' then
+              prefetch_valid <= '1';
+            else
+              prefetch_valid <= '0';
+            end if;
           else
             -- no prefetched word available: clear dout_valid (becomes empty)
             current_candidate_valid <= '0';
@@ -266,7 +285,12 @@ begin
           end if;
         end if;
 
-        if(m_axis_tlast_reg = '1' and m_axis_tvalid_reg = '1' and m_axis_tready = '1' and fifo_count = 0) then -- if the last was received, we clear the whole "pipeline"
+        -- End-of-packet flush. read_en never fetches a word that was not
+        -- written, so anything already in prefetch_reg -- or landing in it
+        -- this cycle -- is the first byte of the NEXT packet. Clearing the
+        -- flags then drops it, and every byte behind it shifts by one.
+        if(m_axis_tlast_reg = '1' and m_axis_tvalid_reg = '1' and m_axis_tready = '1'
+           and fifo_count = 0 and prefetch_valid = '0' and delayed_read_en = '0') then
           current_candidate_valid <= '0';
           prefetch_valid <= '0';
         end if;

@@ -1,0 +1,289 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": { "type": "grafana", "uid": "-- Grafana --" },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "links": [
+    { "asDropdown": false, "icon": "external link", "tags": ["scis"], "targetBlank": false, "title": "SCIS dashboards", "type": "dashboards" }
+  ],
+  "liveNow": false,
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "id": 100,
+      "title": "Health",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "scis-prometheus" },
+      "description": "Prometheus scrape status of the metric packet server.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [
+            { "options": { "0": { "color": "red", "index": 1, "text": "DOWN" }, "1": { "color": "green", "index": 0, "text": "UP" } }, "type": "value" }
+          ],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 1 }] }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 1 },
+      "id": 1,
+      "options": {
+        "colorMode": "background", "graphMode": "none", "justifyMode": "auto", "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto"
+      },
+      "pluginVersion": "13.1.0",
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "scis-prometheus" }, "expr": "up{job=\"myserver\"}", "instant": true, "refId": "A" }
+      ],
+      "title": "Metric server",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "scis-prometheus" },
+      "description": "How long the metric packet server process has been running.",
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "text", "value": null }] }, "unit": "s" },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 1 },
+      "id": 2,
+      "options": {
+        "colorMode": "none", "graphMode": "none", "justifyMode": "auto", "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto"
+      },
+      "pluginVersion": "13.1.0",
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "scis-prometheus" }, "expr": "time() - process_start_time_seconds{job=\"myserver\"}", "instant": true, "refId": "A" }
+      ],
+      "title": "Server uptime",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "scis-prometheus" },
+      "description": "Total valid metric packets received across all ports.",
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "blue", "value": null }] }, "unit": "short" },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 1 },
+      "id": 3,
+      "options": {
+        "colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto"
+      },
+      "pluginVersion": "13.1.0",
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "scis-prometheus" }, "expr": "sum(dc_metric_packets_total)", "instant": true, "refId": "A" }
+      ],
+      "title": "Packets received (total)",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "scis-prometheus" },
+      "description": "Total ALMOSTFULL (FIFO congestion) alerts. Non-zero means the data concentrator hit backpressure.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 1 }] },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 1 },
+      "id": 4,
+      "options": {
+        "colorMode": "background", "graphMode": "none", "justifyMode": "auto", "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto"
+      },
+      "pluginVersion": "13.1.0",
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "scis-prometheus" }, "expr": "sum(dc_almostfull_total)", "instant": true, "refId": "A" }
+      ],
+      "title": "ALMOSTFULL events",
+      "type": "stat"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 5 },
+      "id": 101,
+      "title": "Throughput & congestion",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "scis-prometheus" },
+      "description": "Metric packet rate per UDP port (1-minute rate).",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "axisPlacement": "auto", "drawStyle": "line", "fillOpacity": 15, "lineWidth": 2, "showPoints": "never", "spanNulls": true, "stacking": { "group": "A", "mode": "normal" } },
+          "unit": "pps"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 6 },
+      "id": 5,
+      "options": { "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "right", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "scis-prometheus" }, "expr": "sum by (port) (rate(dc_metric_packets_total[1m]))", "legendFormat": "port {{port}}", "range": true, "refId": "A" }
+      ],
+      "title": "Packet throughput per port",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "scis-prometheus" },
+      "description": "ALMOSTFULL congestion alerts over the last 5 minutes, per port. Any bar means backpressure occurred.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "axisPlacement": "auto", "drawStyle": "bars", "fillOpacity": 70, "lineWidth": 1, "showPoints": "never", "stacking": { "group": "A", "mode": "normal" } },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 6 },
+      "id": 6,
+      "options": { "legend": { "calcs": ["sum"], "displayMode": "table", "placement": "right", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "scis-prometheus" }, "expr": "sum by (port) (increase(dc_almostfull_total[5m]))", "legendFormat": "port {{port}}", "range": true, "refId": "A" }
+      ],
+      "title": "ALMOSTFULL congestion (5m)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "scis-prometheus" },
+      "description": "Malformed packets (wrong size or protocol) per port.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "axisPlacement": "auto", "drawStyle": "line", "fillOpacity": 10, "lineWidth": 1, "showPoints": "never", "spanNulls": true },
+          "unit": "pps"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 14 },
+      "id": 7,
+      "options": { "legend": { "calcs": ["sum"], "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "scis-prometheus" }, "expr": "sum by (port) (rate(dc_invalid_packets_total[5m]))", "legendFormat": "port {{port}}", "range": true, "refId": "A" }
+      ],
+      "title": "Invalid packets",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "scis-prometheus" },
+      "description": "INTERLOCK assertions over the last 5 minutes.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "axisPlacement": "auto", "drawStyle": "bars", "fillOpacity": 70, "lineWidth": 1, "showPoints": "never" },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 14 },
+      "id": 8,
+      "options": { "legend": { "calcs": ["sum"], "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "scis-prometheus" }, "expr": "sum by (port) (increase(dc_interlock_total[5m]))", "legendFormat": "port {{port}}", "range": true, "refId": "A" }
+      ],
+      "title": "INTERLOCK assertions (5m)",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 22 },
+      "id": 102,
+      "title": "Device status",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "scis-prometheus" },
+      "description": "Every named device: latest value, configured thresholds, and how close it is to its upper limit (>= 100% = interlock condition).",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "custom": { "align": "auto", "cellOptions": { "type": "auto" }, "inspect": false },
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "text", "value": null }] }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "% of upper" },
+            "properties": [
+              { "id": "unit", "value": "percentunit" },
+              { "id": "custom.cellOptions", "value": { "type": "color-background" } },
+              { "id": "thresholds", "value": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 0.9 }, { "color": "red", "value": 1 }] } }
+            ]
+          }
+        ]
+      },
+      "gridPos": { "h": 9, "w": 24, "x": 0, "y": 23 },
+      "id": 9,
+      "options": {
+        "cellHeight": "sm",
+        "footer": { "countRows": false, "fields": "", "reducer": ["sum"], "show": false },
+        "showHeader": true,
+        "sortBy": [{ "desc": true, "displayName": "% of upper" }]
+      },
+      "pluginVersion": "13.1.0",
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "scis-prometheus" }, "expr": "data_concentrator_0", "format": "table", "instant": true, "refId": "A" },
+        { "datasource": { "type": "prometheus", "uid": "scis-prometheus" }, "expr": "dc_device_upper_threshold", "format": "table", "instant": true, "refId": "B" },
+        { "datasource": { "type": "prometheus", "uid": "scis-prometheus" }, "expr": "data_concentrator_0 / on(identifier) group_left(name) dc_device_upper_threshold", "format": "table", "instant": true, "refId": "C" }
+      ],
+      "title": "Device status",
+      "transformations": [
+        { "id": "joinByField", "options": { "byField": "name", "mode": "outer" } },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time 1": true, "Time 2": true, "Time 3": true,
+              "identifier 1": true, "identifier 2": true, "identifier 3": true,
+              "unit 2": true, "port": true,
+              "subsystem 2": true, "subsystem 3": true,
+              "__name__ 1": true, "__name__ 2": true, "__name__ 3": true,
+              "job 1": true, "job 2": true, "job 3": true,
+              "instance 1": true, "instance 2": true, "instance 3": true
+            },
+            "indexByName": {},
+            "renameByName": {
+              "name": "device",
+              "unit 1": "unit",
+              "subsystem 1": "subsystem",
+              "Value #A": "value",
+              "Value #B": "upper threshold",
+              "Value #C": "% of upper"
+            }
+          }
+        }
+      ],
+      "type": "table"
+    }
+  ],
+  "refresh": "10s",
+  "schemaVersion": 39,
+  "tags": ["scis", "gatemate", "admin"],
+  "templating": { "list": [] },
+  "time": { "from": "now-30m", "to": "now" },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "SCIS Admin / Diagnostics",
+  "uid": "scis-admin",
+  "version": 1,
+  "weekStart": ""
+}

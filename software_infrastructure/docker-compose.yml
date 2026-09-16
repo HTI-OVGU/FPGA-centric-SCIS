@@ -1,0 +1,62 @@
+# Software-infrastructure stack for the GateMate (CCGM1A1) SCIS.
+#
+#   metric-packet-server : receives UDP metric packets from the FPGA (W5500) on
+#                          ports 9217-9224, exposes them to Prometheus on :8001.
+#   prometheus           : scrapes localhost:8001, serves the TSDB/API on :9090.
+#   grafana              : dashboards at http://localhost:3300. The Prometheus data
+#                          source (http://172.17.0.1:9090, host gateway) and the SCIS
+#                          Overview dashboard are auto-provisioned from ./Grafana.
+#
+# metric-packet-server and prometheus use host networking (the UDP listeners and
+# the localhost:8001 scrape must share the host network namespace). Grafana stays
+# on the default bridge with 3300 published.
+#
+# This file documents/reproduces the running stack. The prometheus and grafana
+# containers were originally started with `docker run`; the volumes below are
+# declared `external` so they reuse the existing data. To start only the new
+# service without disturbing the others:
+#
+#   docker compose up -d --build metric-packet-server
+#
+# To (re)create the whole stack from scratch:
+#
+#   docker volume create prometheus-data
+#   docker volume create grafana-storage
+#   docker compose up -d --build
+
+services:
+  metric-packet-server:
+    build: ./MetricPacketServer
+    image: scis/metric-packet-server:latest
+    container_name: metric-packet-server
+    network_mode: host
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:v3.6.0
+    container_name: prometheus
+    network_mode: host
+    restart: unless-stopped
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+    volumes:
+      - ./Prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    restart: unless-stopped
+    ports:
+      - "3300:3000"
+    volumes:
+      - grafana-storage:/var/lib/grafana
+      - ./Grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./Grafana/dashboards:/var/lib/grafana/dashboards:ro
+
+volumes:
+  prometheus-data:
+    external: true
+  grafana-storage:
+    external: true

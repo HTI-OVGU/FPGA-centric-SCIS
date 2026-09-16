@@ -8,6 +8,11 @@
 # Backward compatible legacy syntax:
 # <pin-direction> "<pin-name>" Loc = "<pin-location>" | <opt.-constraints>;
 #
+# NB: the legacy pin-direction keywords below are Cologne Chip p_r syntax. This project
+# places with nextpnr-himbaechel, whose CCF parser accepts "Net" but NOT "Pin_triout"
+# (it errors with "Unknown type 'pin_triout'"). Use "Net" for every pin, including
+# tri-state ones -- direction and tri-state come from the netlist.
+#
 # Additional constraints can be appended using the pipe symbol.
 # Files are read line by line. Text after the hash symbol is ignored.
 #
@@ -59,21 +64,55 @@ Net   "clk"  Loc = "IO_SB_A8" | SCHMITT_TRIGGER=true;
 Net   "button"  Loc = "IO_EB_B0"; # SW3
 ## SPI from constraints, gatemate github
 
+# PMOD IO map (GateMate EVB, bank N_B):
+#   PMOD A top row    (pins 1-4)  = IO_NB_A0..A3
+#   PMOD A bottom row (pins 7-10) = IO_NB_B0..B3
+#   PMOD B top row    (pins 1-4)  = IO_NB_A4..A7
+#   PMOD B bottom row (pins 7-10) = IO_NB_B4..B7
+# Wiring:
+#   TX W5500 SPI  = PMOD A top row    (sclk, cs, mosi, miso)
+#   RX W5500 SPI  = PMOD B top row    (sclk, cs, mosi, miso)
+#   CAN node      = PMOD B bottom row (pin 7 = can_rx, pin 8 = can_tx)
+## ---- W5500 #1 (TX) SPI on PMOD A top row (IO_NB_A0..A3) ----
 NET   "sclk_0" Loc = "IO_NB_A0"| slew=fast | DRIVE=9 | FF_OBF=true;
 NET   "cs_0" Loc = "IO_NB_A1"| slew=fast | DRIVE=9 | FF_OBF=true;
 NET   "mosi_0" Loc = "IO_NB_A2"| slew=fast | DRIVE=9 | FF_OBF=true;
 NET   "miso_0" Loc = "IO_NB_A3";
-#NET   "ext_interlock_source" Loc = "IO_NB_B3"| FF_IBF=true;
 
-# debug pins on PMOD B
-#Net   "debug_pmod[0]" Loc = "IO_NB_A4";   
-#Net   "debug_pmod[1]" Loc = "IO_NB_A5";   
-#Net   "debug_pmod[2]" Loc = "IO_NB_A6";   
-#Net   "debug_pmod[3]" Loc = "IO_NB_A7";
-Net   "sclk_1" Loc = "IO_NB_B4"| slew=fast | DRIVE=9 | FF_OBF=true;   
-Net   "mosi_1" Loc = "IO_NB_B5"| slew=fast | DRIVE=9 | FF_OBF=true; 
-Net   "miso_1" Loc = "IO_NB_B6"; 
-Net   "cs_1" Loc = "IO_NB_B7"| slew=fast | DRIVE=9 | FF_OBF=true;  
+## ---- W5500 #2 (RX) SPI on PMOD B top row (IO_NB_A4..A7) ----
+Net   "sclk_1" Loc = "IO_NB_A4"| slew=fast | DRIVE=9 | FF_OBF=true;
+Net   "cs_1" Loc = "IO_NB_A5"| slew=fast | DRIVE=9 | FF_OBF=true;
+Net   "mosi_1" Loc = "IO_NB_A6"| slew=fast | DRIVE=9 | FF_OBF=true;
+Net   "miso_1" Loc = "IO_NB_A7";
+
+# ---- CAN node (active: drives a dominant ACK for accepted frames) ----
+# The three valid wiring configurations are documented at the can_source instance in
+# top.vhd. The RTL is currently set to config (B): one shared wire, wired-AND, no
+# transceiver -- can_rx, can_tx, STM32 PD0 and PD1 all on one node with an external
+# 1k-2.2k pull-up to 3V3.
+Net   "can_rx" Loc = "IO_NB_B4" | SCHMITT_TRIGGER=true | PULLUP=true; # PMOD B pin 7; pullup keeps recessive '1' when unwired
+
+# can_tx is a TRISTATE output in config (B): driven '0' for dominant, released to 'Z' for
+# recessive, so the external pull-up (and any other node) owns the recessive level.
+# SLEW=slow keeps the edge soft -- a 125 kbps bit is 8 us, so there is nothing to gain from
+# a fast edge and plenty of scope ringing to lose. DRIVE=9 sinks a 1k pull-up (3.3 mA)
+# comfortably.
+#
+# Use "Net", not the legacy "Pin_triout" the comment block at the top of this file lists:
+# that pin-direction syntax belongs to the Cologne Chip p_r tool, and the nextpnr-himbaechel
+# CCF parser this project builds with rejects it ("Unknown type 'pin_triout'"). "Net" takes
+# the direction and the tri-state from the netlist (CC_TOBUF), so the same line serves all
+# three wiring configurations -- (A)/(C) differ only in the top.vhd generics, not here.
+Net   "can_tx" Loc = "IO_NB_B5" | SLEW=slow | DRIVE=9; # PMOD B pin 8
+# Config (B) stopgap only: the internal pull-up is nominal 50k, giving a slow (~1.4 us,
+# ~17% of a bit) rise. Use a real 1k-2.2k external resistor; enable this only if you have
+# none to hand, and expect marginal edges.
+#Net   "can_tx" Loc = "IO_NB_B5" | SLEW=slow | DRIVE=9 | PULLUP=true;
+
+# free / debug pins: PMOD A bottom row (IO_NB_B0..B3), PMOD B bottom row pins 9-10 (IO_NB_B6..B7)
+#Net   "debug_pmod[1]" Loc = "IO_NB_B0";
+#Net   "debug_pmod[2]" Loc = "IO_NB_B1";
+#Net   "debug_pmod[3]" Loc = "IO_NB_B2";
 
 
 # Onboard LED

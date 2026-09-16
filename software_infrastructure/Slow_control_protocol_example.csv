@@ -1,0 +1,42 @@
+Alarm ,,,,,,,Protocol identifier,DeviceTypeID,Device№,Measurement Data,,,,,,,
+,,,,,,,V01,0 to 1023,0 to 63,integer,,,,,,,
+,,,,,,,24bit,10bit,6bit,32bit,,,,,,,
+,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,
+Responsible,Parameter_Name,DeviceTypeID,Device№,Subsystem,Description,Unit,Nominal_Value,Warning_Low,Warning_High,Critical_Low,Critical_High,Measurement_Interval_s,Sensor_Type,Transfer protocol,Redundancy,Interlock_Action,Priority
+Burtsev,Emergency_Stop,0,0,Safety,Emergency stop circuit continuity,boolean,1,,,0,,0.1,Hardwired relay,Wire,Triple,Full system shutdown,Critical
+Burtsev,SC_online,0,1,Safety,Slow Control online,boolean,1,,,0,,0.5,Single wire,Wire,Dual,Stop scan + Alert operator,Critical
+,,,,,,,,,,,,,,,,,
+Burtsev,Room_Temperature,1,0,Environment,Magnet room ambient temperature,°C,22,18,26,15,30,60,PT100,CAN,Single,AC alert,Medium
+Burtsev,Room_Humidity,2,0,Environment,Relative humidity in scan room,%RH,50,30,70,20,80,60,Capacitive RH sensor,CAN,Single,AC alert,Medium
+,,,,,,,,,,,,,,,,,
+Burtsev,Main_Voltage_,10,0,DAQ Power Supply 1,Mains supply phase L1 voltage,V,230,207,253,200,260,1,True RMS meter,Ethernet UDP,Single,UPS switch/Stop scan,Critical
+Burtsev,SC_FPGA_V_Core,1023,0,Slow Control,CCGM1A1 power supply,V,5,4.8,5.2,4.5,5.5,1,XADC,,Dual,Alarm ,Critical
+Burtsev,ADC1_3V3,900,0,ADC,ADC onboard volage ,V,3.3,3.2,3.4,3,3.6,0.5,XADC,Ethernet UDP,Single,Alert operator,High
+Burtsev,ADC2_3V3,900,1,ADC,ADC onboard volage ,V,3.3,3.2,3.4,3,3.6,0.5,XADC,Ethernet UDP,Single,Alert operator,High
+Burtsev,ADC3_3V3,900,2,ADC,ADC onboard volage ,V,3.3,3.2,3.4,3,3.6,0.5,XADC,Ethernet UDP,Single,Alert operator,High
+Burtsev,ADC4_3V3,900,3,ADC,ADC onboard volage ,V,3.3,3.2,3.4,3,3.6,0.5,XADC,Ethernet UDP,Single,Alert operator,High
+Burtsev,ADC1_FPGA_Temp,901,0,ADC,FPGA temp on ADC board,°C,50,,70,0,90,10,NTC thermistor,Ethernet UDP,Single,Alert operator,Medium
+Burtsev,ADC2_FPGA_Temp,901,1,ADC,FPGA temp on ADC board,°C,50,,70,0,90,10,NTC thermistor,Ethernet UDP,Single,Alert operator,Medium
+Burtsev,ADC3_FPGA_Temp,901,2,ADC,FPGA temp on ADC board,°C,50,,70,0,90,10,NTC thermistor,Ethernet UDP,Single,Alert operator,Medium
+Burtsev,ADC4_FPGA_Temp,901,3,ADC,FPGA temp on ADC board,°C,50,,70,0,90,10,NTC thermistor,Ethernet UDP,Single,Alert operator,Medium
+Burtsev,DAC1_3V3,902,0,DAC,DAC onboard volage ,V,3.3,3.2,3.4,3,3.6,0.5,XADC,Ethernet UDP,Single,Alert operator,High
+Burtsev,DAC2_3V3,902,1,DAC,DAC onboard volage ,V,3.3,3.2,3.4,3,3.6,0.5,XADC,Ethernet UDP,Single,Alert operator,High
+Burtsev,DAC3_3V3,902,2,DAC,DAC onboard volage ,V,3.3,3.2,3.4,3,3.6,0.5,XADC,Ethernet UDP,Single,Alert operator,High
+Burtsev,DAC4_3V3,902,3,DAC,DAC onboard volage ,V,3.3,3.2,3.4,3,3.6,0.5,XADC,Ethernet UDP,Single,Alert operator,High
+Burtsev,DAC1_FPGA_Temp,903,0,DAC,FPGA temp on DAC board,°C,50,,70,0,90,10,NTC thermistor,Ethernet UDP,Single,Alert operator,Medium
+Burtsev,DAC2_FPGA_Temp,903,1,DAC,FPGA temp on DAC board,°C,50,,70,0,90,10,NTC thermistor,Ethernet UDP,Single,Alert operator,Medium
+Burtsev,DAC3_FPGA_Temp,903,2,DAC,FPGA temp on DAC board,°C,50,,70,0,90,10,NTC thermistor,Ethernet UDP,Single,Alert operator,Medium
+Burtsev,DAC4_FPGA_Temp,903,3,DAC,FPGA temp on DAC board,°C,50,,70,0,90,10,NTC thermistor,Ethernet UDP,Single,Alert operator,Medium
+Fabse,LNA[0:63]_V1,100+[63],0-64,PreAmp / LNA,LNA voltage,V,1.8,,,,,,,,,,Medium 
+Fabse,LNA[0:63]_I1,100+[63],0-64,PreAmp / LNA,LNA current ,A,0.02,,,,,,,,,,Medium 
+Fabse,LNA[0:63]_Temp,100+[63],0-64,PreAmp / LNA,LNA temp on LNA Chip ,°C,23,,,,,,,,,,Medium 
+Zeyi ,VCO[0:63]_V1,200+[63],0-64,Mixer / VCO,VCO supply  voltage ,V ,1.2,,,,,,,,,,Medium 
+Zeyi ,VCO[0:63]_Vtune,200+[63],0-64,Mixer / VCO,VCO tuning voltage,V,0.6,0,1,,,,,,,,Medium 
+Zeyi ,VCO[0:63]_Temp,200+[63],0-64,Mixer / VCO,VCO temp on VCO Chip ,°C,23,,,,,,,,,,Medium 
+Alicia,PA[0:63]_V1,300+[63],0-64,PA,PA voltage RMS,V,316,,,,,,,,,,Medium
+Alicia,PA[0:63]_I1,300+[63],0-64,PA,PA current RMS,A,6.3,,,,,,,,,,Medium
+Alicia,PA[0:63]_Temp,300+[63],0-64,PA,PA temp,°C,23,,,,,,,,,,Medium
+Sanaul,SW[0:63]_I(Vctrl1),400+[63],0-64,Switch,gate  current of transistors,mA,12,,,,,,,,,,
+Sanaul,SW[0:63]_I(Vctrl2),400+[63],0-64,Switch,gate  current of transistors,mA,12,,,,,,,,,,
+Erfan,FPGA_Pwr,,,DPD,Check the availability of the FPGA,,,,,,,,,,,,

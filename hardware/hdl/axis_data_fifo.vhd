@@ -26,8 +26,30 @@ entity axis_data_fifo is -- axi stream data fifo for the W5500 controller and SP
 end axis_data_fifo;
 
 architecture rtl of axis_data_fifo is
-  -- Calculate address width based on FIFO depth
-  constant c_ADDR_WIDTH : natural := natural(10);
+  -- Address width derived from the depth actually asked for, not a literal.
+  --
+  -- It used to be the constant 10 while every instance asks for g_DEPTH = 2047,
+  -- so the pointers addressed 1024 entries. fifo_full is only raised at
+  -- fifo_count = g_DEPTH, so the FIFO went on accepting writes long after its
+  -- memory had wrapped and entry 1024 landed on top of entry 0, unread. The
+  -- receive path reads a whole 2 KB socket buffer in one SPI transaction --
+  -- 2040 bytes, every one of them through here -- so any backlog past 1024
+  -- destroyed the ones underneath it. tb_axis_fifo_depth pins it down: 1024
+  -- words come back intact, 2040 words come back with 1014 corrupted.
+  --
+  -- metric_packet_fifo and priority_fifo carry the same defect and the same fix.
+  function clog2(n : natural) return natural is
+    variable r : natural := 0;
+    variable v : natural := n - 1;
+  begin
+    while v > 0 loop
+      r := r + 1;
+      v := v / 2;
+    end loop;
+    return r;
+  end function;
+
+  constant c_ADDR_WIDTH : natural := clog2(g_DEPTH + 1);
   
   -- Internal signals for BRAM interface
   signal bram_wea    : std_logic;
@@ -69,7 +91,6 @@ architecture rtl of axis_data_fifo is
   signal current_candidate_valid : std_logic;
   signal current_candidate_data : std_logic_vector(g_WIDTH-1 downto 0);
   signal current_candidate_has_been_read : std_logic;
-  signal prev_current_candidate_has_been_read : std_logic;
 
   signal prefetch_reg     : std_logic_vector(g_WIDTH-1 downto 0) := (others => '0');
   signal prefetch_valid   : std_logic := '0';
@@ -209,19 +230,27 @@ begin
   
   current_candidate_has_been_read <= m_axis_tvalid_reg and m_axis_tready; -- axis handshake
 
-  process (i_clk)
-  begin
-    if rising_edge(i_clk) then
-      if(current_candidate_has_been_read = '1' and prev_current_candidate_has_been_read = '1') then
-        burst_read_mode <= '1';
-      end if;
-      
-      if(m_axis_tlast_reg = '1' and m_axis_tvalid_reg = '1' and m_axis_tready = '1') then
-        burst_read_mode <= '0';
-      end if;
-      prev_current_candidate_has_been_read <= current_candidate_has_been_read;
-    end if;
-  end process;
+  -- Burst read path disabled.
+  --
+  -- It latched after two back-to-back reads and from then on drove the output
+  -- from prefetch_reg with m_axis_tvalid <= prefetch_valid -- but every
+  -- assignment that clears prefetch_valid is guarded by burst_read_mode = '0',
+  -- so in burst mode nothing ever retired the word. An empty FIFO went on
+  -- asserting tvalid with the last word it had fetched, and a ready consumer
+  -- took that same word again on every clock.
+  --
+  -- In the W5500 transmit path that turned any gap in the fabric into duplicate
+  -- bytes inside an already-open SPI transaction: the chip wrote them into its
+  -- transmit buffer at auto-incremented addresses while Sn_TX_WR was advanced
+  -- only by the number of bytes the fabric had actually handed over, so the
+  -- datagram came out carrying a repeated byte with everything behind it
+  -- displaced. tb_axis_fifo_starve pins the defect down on this module alone.
+  --
+  -- What is left is an ordinary skid buffer, and it is correct when empty. It
+  -- sustains two words every three clocks -- more than ten times what the SPI
+  -- master can take (one byte per sixteen clocks) -- so nothing that reads this
+  -- FIFO is slowed down by the change.
+  burst_read_mode <= '0';
 
   m_axis_tdata_reg <= current_candidate_data(g_WIDTH-3 downto 0) when burst_read_mode = '0' else prefetch_reg(g_WIDTH-3 downto 0);
   m_axis_tlast_reg <= current_candidate_data(g_WIDTH - 2) when burst_read_mode = '0' else prefetch_reg(g_WIDTH - 2);
@@ -252,7 +281,17 @@ begin
             -- move prefetch to dout and keep valid high (no bubble)
             current_candidate_data       <= prefetch_reg;
             current_candidate_valid     <= '1';
-            prefetch_valid <= '0';
+            -- A word from BRAM may be landing in prefetch_reg this very cycle
+            -- (the block above). Clearing prefetch_valid unconditionally would
+            -- overwrite that '1' -- last assignment wins -- and the word would
+            -- be dropped, silently shortening the stream. The mirror branch
+            -- below already makes this distinction; this one did not, and the
+            -- burst path used to hide it by never taking this branch at all.
+            if delayed_read_en = '1' then
+              prefetch_valid <= '1';
+            else
+              prefetch_valid <= '0';
+            end if;
           else
             -- no prefetched word available: clear dout_valid (becomes empty)
             current_candidate_valid <= '0';
@@ -271,7 +310,16 @@ begin
           end if;
         end if;
 
-        if(m_axis_tlast_reg = '1' and m_axis_tvalid_reg = '1' and m_axis_tready = '1' and fifo_count = 0) then -- if the last was received, we clear the whole "pipeline"
+        -- End-of-packet flush. It may only fire when the pipeline is genuinely
+        -- empty behind the last beat: read_en never fetches a word that was not
+        -- written, so anything sitting in prefetch_reg -- or landing in it this
+        -- cycle -- is the first byte of the NEXT packet, and clearing the flags
+        -- would drop it. Back-to-back packets in the W5500 transmit path hit
+        -- exactly that: the leading 'V' of a record goes missing and every byte
+        -- behind it shifts by one. The two blocks above already retire beats
+        -- correctly, so this one only has to cover the idle case.
+        if(m_axis_tlast_reg = '1' and m_axis_tvalid_reg = '1' and m_axis_tready = '1'
+           and fifo_count = 0 and prefetch_valid = '0' and delayed_read_en = '0') then
           current_candidate_valid <= '0';
           prefetch_valid <= '0';
         end if;

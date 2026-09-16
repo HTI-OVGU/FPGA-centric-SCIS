@@ -3,10 +3,19 @@ import time
 import numpy as np
 import threading
 
-# Target IP and Port range
+from net_utils import resolve_host_ip
+
+# Dual-W5500 FPGA: send to the RX chip (192.168.2.100) for ingest; telemetry
+# (incl. ALMOSTFULL alerts) is returned by the TX chip to the host (192.168.2.106).
 TARGET_IP = "192.168.2.100"
 BASE_PORT = 9217
 NUM_PORTS = 8  # 9217 to 9224 inclusive (8 ports total)
+
+# Bind to whatever address the host actually holds on the FPGA subnet, so a
+# reboot that has not (yet) re-applied 192.168.2.106 gives a clear error instead
+# of an "OSError: [Errno 99] Cannot assign requested address" crash.
+HOST_IP = resolve_host_ip(TARGET_IP)
+print(f"Binding to host IP {HOST_IP}, sending to {TARGET_IP}:{BASE_PORT}-{BASE_PORT + NUM_PORTS - 1}")
 
 # Number of packets to send
 NUM_PACKETS = (8192) * 16
@@ -30,7 +39,7 @@ test_data = b"V01P10000"  # Test message
 sockets = []
 for port_offset in range(NUM_PORTS):
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    sock.bind(("192.168.2.106", BASE_PORT + port_offset))
+    sock.bind((HOST_IP, BASE_PORT + port_offset))
     sock.setblocking(False)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 1024*1024)
     sockets.append(sock)
@@ -47,7 +56,7 @@ def receiver_thread():
                     received_per_port[i] += 1
                     packets_received += 1
 
-                if (BASE_PORT + i) == 9224 and b"ALMOSTFULL" in data:
+                if (BASE_PORT + i) == 9224 and data == b"ALMOSTFULL":
                         almostfull_count += 1
                         almostfull_per_port[i] += 1
 
@@ -82,8 +91,6 @@ try:
 
             except BlockingIOError:
                 retry_count += 1
-                print("has to retry")
-                time.sleep(0.0000001)
 
         if not sent:
             print(f"Warning: Failed to send packet after retries")
@@ -116,5 +123,8 @@ finally:
 
     print(f"\nTotal sent: {packets_sent}")
     print(f"Total received: {packets_received}")
-    print(f"Overall loss: {(1 - packets_received/packets_sent)*100:.2f}%")
+    if packets_sent > 0:
+        print(f"Overall loss: {(1 - packets_received/packets_sent)*100:.2f}%")
+    else:
+        print("Overall loss: n/a (no packets sent)")
     print(f"Port 9224 ALMOSTFULL packets received: {almostfull_count}")

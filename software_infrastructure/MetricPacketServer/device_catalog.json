@@ -1,0 +1,9 @@
+{
+  "_comment": "LEGACY BENCH CATALOG. The slow-control parameters now come from slow_control_catalog.json (generated from Slow_control_protocol_example.csv), and the FPGA threshold BRAM is generated from the same CSV -- see threshold_tables_pkg.vhd. The four devices below are the pre-CSV CAN/UDP bench devices; they are kept only so traffic from the old test node still shows a human name instead of device_<id>. Their DeviceTypeIDs (268/280/320/332) are not used by the CSV, so they cannot collide with a real parameter. Delete this file's entries once the bench node speaks slow-control identifiers. Keys are the 16 bit identifier ((DeviceTypeID << 6) | DeviceNo) as lowercase hex; lower/upper are the interlock limits in the same Q22.10 the BRAM holds.",
+  "devices": {
+    "5000": {"name": "PSU",         "unit": "V",   "subsystem": "Bench (pre-CSV)", "lower": 0.0, "upper": 1000.0, "index": 320, "source": "CAN 0x140"},
+    "4300": {"name": "COIL",        "unit": "A",   "subsystem": "Bench (pre-CSV)", "lower": 0.0, "upper": 10.0,   "index": 268, "source": "CAN"},
+    "4600": {"name": "FAN speed",   "unit": "RPM", "subsystem": "Bench (pre-CSV)", "lower": 0.0, "upper": 976.0,  "index": 280, "source": "CAN"},
+    "5300": {"name": "system load", "unit": "%",   "subsystem": "Bench (pre-CSV)", "lower": 0.0, "upper": 100.0,  "index": 332, "source": "CAN"}
+  }
+}

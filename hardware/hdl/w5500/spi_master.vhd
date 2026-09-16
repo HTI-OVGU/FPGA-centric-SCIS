@@ -62,6 +62,12 @@ architecture behavioral of spi_master is
     signal first_execute : std_logic := '1';
     signal last_byte_of_spi_transaction : std_logic := '0';
 
+    -- Bus frozen because the payload FIFO ran dry mid-transaction.
+    signal tx_underrun : std_logic := '0';
+    -- Previous clk_toggles, so a byte-complete pulse can be edge-triggered
+    -- rather than level-triggered: the counter stands still while stalled.
+    signal prev_clk_toggles : integer := 0;
+
     component axis_data_fifo is
         generic (
             g_WIDTH : natural := 10;
@@ -107,6 +113,23 @@ begin
 
     tready <= tready_int_buffer;
     tx_payload_valid_buffer <= tx_payload_valid;
+
+    -- The byte on the wire is finished, more bytes are due, and the payload
+    -- FIFO has nothing ready. The transaction opens as soon as ONE byte is
+    -- buffered, so any later gap in the source can empty the FIFO while CS is
+    -- still low -- and without this the boundary reload below would take stale
+    -- data while sclk kept running, shifting the held byte out a second time
+    -- and sliding every byte behind it. Freezing instead is safe: CS stays
+    -- asserted and the W5500 waits, because the frame ends on CS deassert, not
+    -- on a gap in the clock.
+    --
+    -- This assumes the source always finishes the burst it started (tlast
+    -- eventually arrives); an abandoned burst would hold the bus.
+    tx_underrun <= '1' when spistate = spi_execute
+                        and clk_toggles = 15
+                        and last_byte_of_spi_transaction = '0'
+                        and tx_payload_valid_buffer = '0'
+                   else '0';
 
     -- RX Payload FIFO: Stores received data
     u_rx_payload_fifo : axis_data_fifo
@@ -197,11 +220,12 @@ begin
                     spi_busy <= '1';
                     
                     -- Transmit data
-                    if(clk_toggles mod 2 = 1) then -- falling edge of sclk
+                    if(clk_toggles mod 2 = 1 and tx_underrun = '0') then -- falling edge of sclk
                         tx_buffer <= tx_buffer(8-2 downto 0) & '0';
                     end if;
 
-                    if(clk_toggles = 15 and last_byte_of_spi_transaction = '0') then 
+                    if(clk_toggles = 15 and last_byte_of_spi_transaction = '0'
+                       and tx_payload_valid_buffer = '1') then
                         tx_payload_ready <= '1';
                         tx_buffer <= tx_payload_data;
                         last_byte_of_spi_transaction <= tx_payload_last;
@@ -219,13 +243,20 @@ begin
                         end if;        
                     end if;
 
-                    if(clk_toggles = 15) then
+                    -- Edge-triggered, not level-triggered: clk_toggles stands
+                    -- still at 15 while stalled, so keying off its level alone
+                    -- would push the same received byte into the RX FIFO again
+                    -- on every stalled cycle. Identical timing when not stalled.
+                    if(clk_toggles = 15 and prev_clk_toggles /= 15) then
                         rx_buffer_valid <= '1';
                     else
                         rx_buffer_valid <= '0';
                     end if;
 
-                    if(tx_payload_valid_buffer = '0') then --if no more bytes to send, then also no more bytes to receive -> last byte
+                    -- An empty payload FIFO is also the stall condition, so
+                    -- without the guard a stall would fake an end-of-packet on
+                    -- the receive stream.
+                    if(tx_payload_valid_buffer = '0' and tx_underrun = '0') then --if no more bytes to send, then also no more bytes to receive -> last byte
                         rx_buffer_last <= '1';
                     else
                         rx_buffer_last <= '0';
@@ -262,13 +293,17 @@ begin
             if(reset = '1') then 
                 sclk_buffer <= '0';
                 clk_toggles <= 0;
+                prev_clk_toggles <= 0;
             else 
+                prev_clk_toggles <= clk_toggles;
                 if(cs_buffer = '0' and spistate = spi_execute) then 
-                    sclk_buffer <= not sclk_buffer;
-                    if(clk_toggles < 15) then
-                        clk_toggles <= clk_toggles + 1;
-                    else 
-                        clk_toggles <= 0;
+                    if(tx_underrun = '0') then
+                        sclk_buffer <= not sclk_buffer;
+                        if(clk_toggles < 15) then
+                            clk_toggles <= clk_toggles + 1;
+                        else 
+                            clk_toggles <= 0;
+                        end if;
                     end if;
                 else 
                     sclk_buffer <= '0';

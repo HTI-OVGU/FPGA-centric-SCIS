@@ -1,36 +1,122 @@
 v 4
-file . "../../hdl/data_concentrator/telemetry_sender.vhd" "692773052be0365f5f009c562eba0b0fdb1f7d09" "20260316074006.751":
-  entity telemetry_sender at 1( 0) + 0 on 32;
-  architecture behavioral of telemetry_sender at 25( 859) + 0 on 33;
-file . "../../hdl/data_concentrator/bram_threshold_lookup.vhd" "e745a202b6fa548c3c9b27c37d345cd38e24e380" "20260316074006.512":
-  entity threshold_lookup_bram at 1( 0) + 0 on 28;
-  architecture rtl of threshold_lookup_bram at 23( 689) + 0 on 29;
-file . "../../hdl/bram_dp_write_through.vhd" "d031ad5fd85740e0f083de10411a17eb0c7b22e9" "20260316074006.133":
-  entity bram_dp_write_through at 1( 0) + 0 on 24;
-  architecture rtl of bram_dp_write_through at 23( 692) + 0 on 25;
-file . "../../hdl/data_concentrator/data_concentrator.vhd" "cf2ae20ac512fe5b18204123c3bc8a1b1af8d9e5" "20260316074005.916":
-  entity data_concentrator at 1( 0) + 0 on 20;
-  architecture behavioral of data_concentrator at 28( 929) + 0 on 21;
-file . "../../hdl/data_concentrator/metric_packet_fifo.vhd" "c6f053a0cf5350693151b06b07dc28597c26fdf3" "20260316074005.535":
-  entity metric_packet_fifo at 1( 0) + 0 on 16;
-  architecture rtl of metric_packet_fifo at 31( 851) + 0 on 17;
-file . "../../hdl/data_concentrator/interlock_glitch_filter.vhd" "43cbbc62907dad3dbb17a9c34782a08a0236cd53" "20260316074005.296":
-  entity interlock_glitch_filter at 1( 0) + 0 on 12;
-  architecture behavioral of interlock_glitch_filter at 15( 338) + 0 on 13;
-file . "../../hdl/data_concentrator/metric_packet_stream_interface.vhd" "1967cd340ac684465749c86b914abba3c60fa472" "20260316074005.212":
-  package metric_axi_stream_pkg at 2( 32) + 0 on 11;
+file . "../../testbenches/tb_w5500_tx_backpressure.vhd" "0155493fe887c8e0007b7cb9ca37646f5eca4f4b" "20260821140237.194":
+  entity tb_w5500_tx_backpressure at 56( 3140) + 0 on 2754;
+  architecture sim of tb_w5500_tx_backpressure at 115( 6150) + 0 on 2755;
+file . "../../testbenches/tb_w5500_tx_multisocket.vhd" "71c879a65f60e3d3cfca3b0540ef0963819cf790" "20260820161825.526":
+  entity tb_w5500_tx_multisocket at 26( 1413) + 0 on 2688;
+  architecture sim of tb_w5500_tx_multisocket at 60( 2876) + 0 on 2689;
+file . "../../testbenches/tb_axis_fifo_depth.vhd" "93021be284b4e143d04bbe6af5a075561986cefa" "20260820161755.412":
+  entity tb_axis_fifo_depth at 20( 992) + 0 on 2638;
+  architecture sim of tb_axis_fifo_depth at 32( 1245) + 0 on 2639;
+file / "/tmp/claude-1000/-home-misha-FPGA-centric-SCIS/30937f69-3994-4d95-9a45-2e42c4eb5404/scratchpad/tb_fifo_rxpat.vhd" "638e3fde5d9666a8fa0c85da7c3bb5fbc7bdb2fc" "20260819152241.814":
+  entity tb_fifo_rxpat at 1( 0) + 0 on 1276;
+  architecture sim of tb_fifo_rxpat at 12( 303) + 0 on 1277;
+file . "../../testbenches/tb_w5500_rx_sustained.vhd" "f2e13aae5da40dac7c73563cad143d74f0f80b09" "20260820161756.887":
+  entity tb_w5500_rx_sustained at 26( 1381) + 0 on 2652;
+  architecture sim of tb_w5500_rx_sustained at 45( 2000) + 0 on 2653;
+file . "../../hdl/w5500/w5500_state_machine.vhd" "5097a14a2470a9cf92f3162e30d182d783de6baf" "20260821125552.652":
+  entity w5500_state_machine at 1( 0) + 0 on 2748;
+  architecture behavioral of w5500_state_machine at 88( 4519) + 0 on 2749;
+file . "../../hdl/data_concentrator/priority_fifo.vhd" "8cd9997948a0d409338d401a706bf39cbc9a95a6" "20260820161857.147":
+  entity priority_axis_data_fifo at 1( 0) + 0 on 2712;
+  architecture rtl of priority_axis_data_fifo at 29( 897) + 0 on 2713;
+file . "../../testbenches/tb_dc_fifo_stress.vhd" "bb092c9ff2242db0d74d18f2d5af281bd9d1bc51" "20260820161811.486":
+  entity tb_dc_fifo_stress at 16( 768) + 0 on 2660;
+  architecture sim of tb_dc_fifo_stress at 29( 1008) + 0 on 2661;
+file . "../../testbenches/tb_axis_fifo_stress.vhd" "17797b27e33dbd62c7cf94c0d69ce2bbcce637d3" "20260820161754.261":
+  entity tb_axis_fifo_stress at 14( 707) + 0 on 2632;
+  architecture sim of tb_axis_fifo_stress at 33( 1370) + 0 on 2633;
+file . "../../testbenches/tb_w5500_tx.vhd" "cb0292911f32a61426f8945dceb8985962f2ef30" "20260820161849.588":
+  entity tb_w5500_tx at 20( 1010) + 0 on 2702;
+  architecture sim of tb_w5500_tx at 54( 2521) + 0 on 2703;
+file . "../../testbenches/tb_mpf_wrap.vhd" "52ed9e598b3370e2779c8c554acfbf44c7d87215" "20260820161747.413":
+  entity tb_mpf_wrap at 6( 371) + 0 on 2554;
+  architecture sim of tb_mpf_wrap at 13( 476) + 0 on 2555;
+file . "../../hdl/w5500/w5500_stream_manager.vhd" "ae3f8e000dd74556585c50a31e184592f933dfc3" "20260821125552.507":
+  entity w5500_stream_manager at 3( 189) + 0 on 2746;
+  architecture behavioral of w5500_stream_manager at 49( 2077) + 0 on 2747;
+file . "../../hdl/w5500/spi_master.vhd" "e13c29171c23158159f1b33ca9715a99830d994e" "20260821125552.281":
+  entity spi_master at 7( 334) + 0 on 2742;
+  architecture behavioral of spi_master at 31( 1022) + 0 on 2743;
+file . "../../hdl/can/can_metric_source.vhd" "475ea8a29f5426a68a8326c62ee43921948b8329" "20260707203409.215":
+  entity can_metric_source at 8( 537) + 0 on 254;
+  architecture rtl of can_metric_source at 39( 1994) + 0 on 255;
+file . "../../hdl/can/can_node.vhd" "719ac3640636b6a6b7ebd11bb4f0745c9eb270de" "20260707203409.199":
+  entity can_node at 28( 1889) + 0 on 250;
+  architecture rtl of can_node at 58( 3071) + 0 on 251;
+file . "../../testbenches/tb_telemetry.vhd" "4485745e0ac52c6c1b270b3f2cdb20ddd0459dd8" "20260820161751.167":
+  entity tb_telemetry at 9( 533) + 0 on 2596;
+  architecture sim of tb_telemetry at 17( 672) + 0 on 2597;
+file . "../../testbenches/tb_mpm.vhd" "9ae5da7999e9f8e2ecbbc80bf4cbdbcae12d37fa" "20260820161749.189":
+  entity tb_mpm at 9( 566) + 0 on 2575;
+  architecture sim of tb_mpm at 18( 729) + 0 on 2576;
+file . "../../hdl/data_concentrator/threshold_tables_pkg.vhd" "2db00dda8a15657abb0f4f99e750ed4b26123e69" "20260820161856.646":
+  package threshold_tables_pkg at 1( 0) + 0 on 2705;
+file . "../../testbenches/tb_mpf.vhd" "1feca8d4f2adb7deabc099eff8e7c0a4dfa0043d" "20260820161746.849":
+  entity tb_mpf at 10( 609) + 0 on 2548;
+  architecture sim of tb_mpf at 18( 736) + 0 on 2549;
+file . "../../hdl/data_concentrator/telemetry_sender.vhd" "c96fc7158365e2d59bd493967193be9741c07d0d" "20260820161857.981":
+  entity telemetry_sender at 1( 0) + 0 on 2724;
+  architecture behavioral of telemetry_sender at 25( 859) + 0 on 2725;
+file . "../../hdl/data_concentrator/bram_threshold_lookup.vhd" "396cb6d605aa8a05b0dd15bbec3e9d34c6e35117" "20260820161857.333":
+  entity threshold_lookup_bram at 1( 0) + 0 on 2714;
+  architecture rtl of threshold_lookup_bram at 28( 978) + 0 on 2715;
+file . "../../hdl/bram_dp_write_through.vhd" "d031ad5fd85740e0f083de10411a17eb0c7b22e9" "20260821125552.022":
+  entity bram_dp_write_through at 1( 0) + 0 on 2738;
+  architecture rtl of bram_dp_write_through at 23( 692) + 0 on 2739;
+file . "../../hdl/data_concentrator/data_concentrator.vhd" "5e386b912cf6935ee0f71681f2c781f94aa69871" "20260820161858.069":
+  entity data_concentrator at 1( 0) + 0 on 2726;
+  architecture behavioral of data_concentrator at 29( 968) + 0 on 2727;
+file . "../../hdl/data_concentrator/metric_packet_fifo.vhd" "b705ada5f21351a266a70ef132da6c752bb385fa" "20260820161856.959":
+  entity metric_packet_fifo at 1( 0) + 0 on 2710;
+  architecture rtl of metric_packet_fifo at 31( 851) + 0 on 2711;
+file . "../../hdl/data_concentrator/interlock_glitch_filter.vhd" "43cbbc62907dad3dbb17a9c34782a08a0236cd53" "20260820161857.926":
+  entity interlock_glitch_filter at 1( 0) + 0 on 2722;
+  architecture behavioral of interlock_glitch_filter at 15( 338) + 0 on 2723;
+file . "../../hdl/data_concentrator/metric_packet_stream_interface.vhd" "1967cd340ac684465749c86b914abba3c60fa472" "20260820161856.600":
+  package metric_axi_stream_pkg at 2( 32) + 0 on 2704;
 file . "../../testbenches/tb_data_concentrator.vhd" "6a995eb8dfbd7d4304903cab128b7b876218b4c2" "20260316074005.374":
   entity data_concentrator_tb at 1( 0) + 0 on 14;
   architecture behavioral of data_concentrator_tb at 9( 164) + 0 on 15;
-file . "../../hdl/data_concentrator/priority_fifo.vhd" "929e93059c4799240e1c0316d8beed8e6d7352d0" "20260316074005.733":
-  entity priority_axis_data_fifo at 1( 0) + 0 on 18;
-  architecture rtl of priority_axis_data_fifo at 29( 897) + 0 on 19;
-file . "../../hdl/data_concentrator/udp_packet_adapter.vhd" "2ef147455472ab3e94630fc75b13140faebc9867" "20260316074006.021":
-  entity udp_packet_adapter at 1( 0) + 0 on 22;
-  architecture behavioral of udp_packet_adapter at 25( 716) + 0 on 23;
-file . "../../hdl/data_concentrator/metric_packet_manager.vhd" "87109995dba1da04639b901c485aa7b62b21a77b" "20260316074006.208":
-  entity metric_packet_manager at 1( 0) + 0 on 26;
-  architecture behavioral of metric_packet_manager at 22( 700) + 0 on 27;
-file . "../../hdl/data_concentrator/threshold_logic.vhd" "7bc1097e48ed979b03e3fe5ee993db78c0c49617" "20260316074006.613":
-  entity threshold_logic at 1( 0) + 0 on 30;
-  architecture behavioral of threshold_logic at 26( 771) + 0 on 31;
+file . "../../hdl/data_concentrator/udp_packet_adapter.vhd" "2ef147455472ab3e94630fc75b13140faebc9867" "20260820161857.810":
+  entity udp_packet_adapter at 1( 0) + 0 on 2720;
+  architecture behavioral of udp_packet_adapter at 25( 716) + 0 on 2721;
+file . "../../hdl/data_concentrator/metric_packet_manager.vhd" "ed1d1d50ea5ed7780473ce23932a65b2b1902848" "20260820161857.518":
+  entity metric_packet_manager at 1( 0) + 0 on 2718;
+  architecture behavioral of metric_packet_manager at 22( 742) + 0 on 2719;
+file . "../../hdl/data_concentrator/threshold_logic.vhd" "c3f8530f182952b3cb6b55cba57627b5dc2f1444" "20260820161857.392":
+  entity threshold_logic at 1( 0) + 0 on 2716;
+  architecture behavioral of threshold_logic at 32( 1035) + 0 on 2717;
+file . "../../testbenches/tb_priority_fifo.vhd" "d884e56985048f96be1a588e89e59b4eaf8e304f" "20260820161746.306":
+  entity tb_priority_fifo at 9( 547) + 0 on 2542;
+  architecture sim of tb_priority_fifo at 17( 694) + 0 on 2543;
+file . "../../testbenches/tb_threshold.vhd" "1fd759516ecfe3993f95571b0baaca64d19daa6d" "20260820161748.253":
+  entity tb_threshold at 13( 775) + 0 on 2566;
+  architecture sim of tb_threshold at 22( 950) + 0 on 2567;
+file . "../../testbenches/tb_thr_mgr.vhd" "135ab45e6a04dbee91fe32ad64d9730d7fe29315" "20260820161750.623":
+  entity tb_thr_mgr at 10( 626) + 0 on 2591;
+  architecture sim of tb_thr_mgr at 19( 797) + 0 on 2592;
+file . "../../testbenches/tb_dc_ch0_drain.vhd" "6fe6586a1cb28dad1ef2eb23c2332e02807fb02a" "20260820161753.012":
+  entity tb_dc_ch0_drain at 20( 1228) + 0 on 2620;
+  architecture sim of tb_dc_ch0_drain at 30( 1508) + 0 on 2621;
+file . "../../hdl/can/can_metric_adapter.vhd" "05b7f1c83a40812d93f857472e1e8a04de668b13" "20260707203409.207":
+  entity can_metric_adapter at 18( 1144) + 0 on 252;
+  architecture behavioral of can_metric_adapter at 45( 2231) + 0 on 253;
+file . "../../testbenches/tb_can_to_dc.vhd" "3d26ba56da51c682ee64e12799eab5303ac5bffe" "20260707203409.224":
+  entity tb_can_to_dc at 35( 2301) + 0 on 256;
+  architecture sim of tb_can_to_dc at 44( 2476) + 0 on 257;
+file . "../../hdl/axis_data_fifo.vhd" "647309538477a3d6fd7322982f22379c95a87216" "20260821125552.091":
+  entity axis_data_fifo at 1( 0) + 0 on 2740;
+  architecture rtl of axis_data_fifo at 28( 836) + 0 on 2741;
+file . "../../testbenches/tb_axis_fifo_starve.vhd" "28f94e76333422466d0d386413d1a0118bdffac9" "20260820161753.730":
+  entity tb_axis_fifo_starve at 20( 1080) + 0 on 2626;
+  architecture sim of tb_axis_fifo_starve at 28( 1210) + 0 on 2627;
+file . "../../testbenches/tb_dc_w5500_tx.vhd" "5cac48765818673f4b23cb88b36380f29feb3021" "20260820161858.973":
+  entity tb_dc_w5500_tx at 21( 985) + 0 on 2736;
+  architecture sim of tb_dc_w5500_tx at 36( 1277) + 0 on 2737;
+file / "/tmp/claude-1000/-home-misha-FPGA-centric-SCIS/30937f69-3994-4d95-9a45-2e42c4eb5404/scratchpad/tb_fifo_min.vhd" "65426cd4de01ca2fdde2689014f9f66ba033e329" "20260819110941.910":
+  entity tb_fifo_min at 1( 0) + 0 on 736;
+  architecture sim of tb_fifo_min at 10( 205) + 0 on 737;
+file . "../../hdl/w5500/spi_streamer.vhd" "33bde415adb03c1e84991e6c0951b94d66965d39" "20260821125552.403":
+  entity w5500_axi_data_streamer at 1( 0) + 0 on 2744;
+  architecture behavioral of w5500_axi_data_streamer at 39( 1420) + 0 on 2745;

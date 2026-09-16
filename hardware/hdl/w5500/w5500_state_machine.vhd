@@ -10,7 +10,50 @@ entity w5500_state_machine is
     source_ip_address : std_logic_vector(31 downto 0) := x"C0A80264"; --local ip address   192 168 2 100
     dest_ip_address   : std_logic_vector(31 downto 0) := x"C0A8026A"; --destination ip address  192 168 2 106
     source_udp_port   : std_logic_vector(15 downto 0) := x"2401"; -- local udp port   217
-    dest_udp_port     : std_logic_vector(15 downto 0) := x"2401" --destination udp port   217
+    dest_udp_port     : std_logic_vector(15 downto 0) := x"2401"; --destination udp port   217
+
+    -- How many 9-byte metric packets may accumulate in the W5500's TX buffer
+    -- before SEND is issued. The nine SPI transactions around a datagram cost
+    -- ~25 us whatever it carries, so this divides that cost by N. Keep
+    -- N * 9 below minimum_free_tx_buffer_memory (256): 16 packets = 144 bytes.
+    TX_BATCH_MAX_PACKETS : integer := 16;
+
+    -- Send a partially filled datagram after this many clocks without an append,
+    -- provided the transmit stream has nothing else to offer. 300 at 30 MHz is
+    -- 10 us -- the gap between packets at 100 000 packets/s. Above that rate the
+    -- batch fills first and this never fires; below it, this is what bounds the
+    -- added latency instead of letting a packet wait for companions that are not
+    -- coming.
+    TX_FLUSH_IDLE_CLKS : integer := 300;
+
+    -- Hard ceiling on how long a datagram may stay open, checked even while the
+    -- stream is busy. TX_FLUSH_IDLE_CLKS alone is not enough: the arbiter
+    -- upstream is strict lowest-index-first, so a saturated socket 0 can keep
+    -- the stream permanently non-empty and a partly filled datagram on a higher
+    -- socket would then never reach the idle test at all -- its metrics would
+    -- sit in the chip's transmit buffer until that socket happened to receive
+    -- TX_BATCH_MAX_PACKETS more.
+    --
+    -- It has to sit well above the interval at which a *busy* socket gets its
+    -- turn, or a socket merely queueing behind the others is mistaken for idle
+    -- and batching collapses again. One append is 12 SPI bytes (3 header, 9
+    -- payload) at 15 MHz = 6.4 us, and closing a datagram costs about 15 us
+    -- more, so waiting behind seven other sockets is roughly 60 us = 1800
+    -- clocks at 30 MHz. 8192 clocks is 273 us: comfortably clear of that, and
+    -- far below anything the slow-control loop notices.
+    TX_MAX_OPEN_CLKS : integer := 8192;
+
+    -- Watchdog: how long the machine may sit in one state before it is forced
+    -- back to a known one. Six states wait on a condition with no else branch
+    -- and no timeout, so a condition that never arrives parks the controller
+    -- until the board is power-cycled. None of them is known to hang today --
+    -- the wedge that was actually reproduced is the Sn_RX_RSR width, and that
+    -- one skips a socket rather than stopping the machine -- but a controller
+    -- whose only recovery is a power cycle should not rely on that list being
+    -- complete. The longest legitimate state is the receive-buffer read: 2048
+    -- bytes at 533 ns each is 1.1 ms, so this has to sit well above it.
+    -- 65535 clocks at 30 MHz is 2.18 ms.
+    WATCHDOG_CLKS : integer := 65535
   );
   port (
     clk      : in std_logic;
@@ -100,7 +143,7 @@ architecture behavioral of w5500_state_machine is
 
   signal spi_payload_data        : std_logic_vector(31 downto 0) := (others => '0');
   signal shift_payload_buffer           : std_logic_vector(31 downto 0) := (others => '0'); -- buffer for second process
-  signal spi_payload_data_byte_length        : integer range 0 to 2047; -- this has to be set every time the raw_payload_buffer is updated.
+  signal spi_payload_data_byte_length        : integer range 0 to 4095; -- this has to be set every time the raw_payload_buffer is updated.
   signal byte_length_buffer             : integer   := 0; -- buffer for second process
   signal prev_payload_data_has_been_set : std_logic := '0';
   signal spi_payload_data_was_set      : std_logic := '0';
@@ -126,19 +169,80 @@ architecture behavioral of w5500_state_machine is
 
   signal ext_pl_tready_int : std_logic := '0';
 
-  signal rx_received_size_reg : std_logic_vector(10 downto 0);
+  -- Sn_RX_RSR counts bytes waiting in the socket's receive buffer, and that
+  -- buffer is 2048 bytes (the chip default -- Sn_RXBUF_SIZE is never written),
+  -- so the value reaches 2048 and needs twelve bits. At eleven it wrapped: a
+  -- completely full buffer read back as zero, CHECK_IF_RECEIVED_DATA_IS_AVAILABLE
+  -- concluded the socket was empty and skipped it, and it was never read again.
+  -- The socket stayed full, the chip dropped everything addressed to it, and
+  -- from outside that looks exactly like "the W5500 closed the socket".
+  -- tb_w5500_tx with G_RX_FILL = 2048 is the regression.
+  signal rx_received_size_reg : std_logic_vector(11 downto 0);
   signal rx_pointer_reg       : std_logic_vector(15 downto 0);
   signal updated_rx_pointer_reg : std_logic_vector(15 downto 0);
 
-  --signal tx_write_pointer : std_logic_vector(13 downto 0); -- 14 Bits in size, w^14 = 16kb
-  signal tx_write_pointer : std_logic_vector(15 downto 0); -- 14 Bits in size, w^14 = 16kb
   -- PASSTHROUGH MODE COUNTERS
-  signal ptm_transmitted_byte_counter                : unsigned(15 downto 0) := (others => '0');
   signal bytes_counted_during_tx_fifo_passthrough    : integer range 0 to 1023;
   signal ext_pl_tlast_was_received                   : std_logic := '0';
   signal requested_streammanager_state               : std_logic_vector(1 downto 0);
   signal ptm_data_being_written_to_w5500             : std_logic;
   signal last_rx_packet_from_w5500_has_been_received : std_logic;
+
+  -- Datagram accumulation, tracked per socket. Packets are written into the
+  -- W5500's transmit buffer as they arrive, each as its own short SPI
+  -- transaction, and Sn_TX_WR is only advanced (and SEND issued) once the batch
+  -- is closed. Because every write is self-contained, a gap in the source
+  -- between packets cannot land inside an open SPI transaction.
+  --
+  -- Why per socket rather than one batch at a time: the batch was single, so a
+  -- packet for a different socket closed whatever was accumulating. Traffic
+  -- spread over all eight sockets alternates almost every packet -- the arbiter
+  -- in metric_packet_manager re-checks priority after each one -- so every
+  -- datagram went out holding exactly one metric and the batching bought
+  -- nothing. That is why the eight-socket spread measured *slower* than one hot
+  -- socket. Each socket in the chip has its own transmit buffer and its own
+  -- Sn_TX_WR, so batches on different sockets are genuinely independent and
+  -- only need separate bookkeeping here.
+  type socket_ptr_t     is array (0 to 7) of unsigned(15 downto 0);
+  type socket_count_t   is array (0 to 7) of integer range 0 to TX_BATCH_MAX_PACKETS;
+  type socket_timer_t   is array (0 to 7) of integer range 0 to TX_MAX_OPEN_CLKS;
+
+  signal batch_open    : std_logic_vector(7 downto 0) := (others => '0');
+  -- Where this socket's next payload byte goes: Sn_TX_WR as read when the
+  -- datagram was opened, advanced by every byte written since. It doubles as the
+  -- value Sn_TX_WR is set to when the datagram closes, so the opening pointer
+  -- and the running length never need to be kept apart.
+  signal tx_wr_cur     : socket_ptr_t   := (others => (others => '0'));
+  signal batch_packets : socket_count_t := (others => 0);
+  -- A datagram opened by something that is not a V01 record (telemetry_sender
+  -- emits bare-ASCII alerts) must carry that one payload alone: admitting a
+  -- metric behind it would leave the receiver parsing records at the wrong
+  -- offset for the rest of the datagram.
+  signal batch_solo    : std_logic_vector(7 downto 0) := (others => '0');
+  -- Clocks since each socket's last append; one counter serves both flush tests.
+  signal flush_timer   : socket_timer_t := (others => 0);
+  -- Quiet long enough to go out if there is nothing better to do.
+  signal idle_socket   : std_logic_vector(2 downto 0) := "000";
+  signal idle_any      : std_logic := '0';
+  -- Open long enough that it goes out even while the stream is busy.
+  signal stale_socket  : std_logic_vector(2 downto 0) := "000";
+  signal stale_any     : std_logic := '0';
+
+  -- Sn_DIPR and Sn_DPORT are per-socket registers and hold their value, while
+  -- the values written are synthesis-time constants -- one IP for every socket,
+  -- and a port that is just the base plus the socket number. Rewriting them on
+  -- every datagram costs 12 bytes of SPI (6.4 us at 15 MHz) to store what is
+  -- already there. One bit per socket, so each is programmed exactly once after
+  -- reset; a single "last socket" register would lose the saving as soon as
+  -- traffic alternates between sockets.
+  signal dest_regs_done : std_logic_vector(7 downto 0) := (others => '0');
+
+  -- Watchdog state. init_done keeps the escape from throwing the machine out of
+  -- the chip-configuration pipeline, which would leave the W5500 unconfigured:
+  -- before the first pass through RETURN_TO_DEFAULT_ROUTINE the only safe
+  -- recovery is to start the whole initialisation again.
+  signal watchdog   : integer range 0 to WATCHDOG_CLKS := 0;
+  signal init_done  : std_logic := '0';
 
   -- constants
 
@@ -210,7 +314,7 @@ architecture behavioral of w5500_state_machine is
       spi_header_valid : out std_logic;
 
       spi_data_buffer           : in std_logic_vector(31 downto 0); -- raw spi payload data from FSM
-      spi_data_length           : in integer range 0 to 2047; -- amount of payload bytes to be transmitted
+      spi_data_length           : in integer range 0 to 4095; -- amount of payload bytes to be transmitted
       payload_data_has_been_set : in std_logic;
 
       ptm_data_being_written_to_w5500             : out std_logic;
@@ -221,6 +325,75 @@ architecture behavioral of w5500_state_machine is
 begin
 
   ext_pl_tready <= ext_pl_tready_int;
+
+  -- Idle gap before a partially filled datagram goes out anyway, measured
+  -- separately for every socket: a socket that has gone quiet must not be held
+  -- open by traffic on a different one.
+  p_flush_timer : process (clk)
+  begin
+    if rising_edge(clk) then
+      for s in 0 to 7 loop
+        -- Reset while a packet is actually being written to this socket, so this
+        -- measures the quiet since that socket's last append. Keying it off
+        -- ext_pl_tvalid instead was wrong: that signal is not a reliable
+        -- "something is coming" and held the timer at zero, so a partial
+        -- datagram never went out on timeout at all.
+        if reset = '1' or batch_open(s) = '0'
+           or (w5500_control_flow_state = WRITE_TX_DATA_TO_BUFFER
+               and to_integer(unsigned(current_socket_counter)) = s) then
+          flush_timer(s) <= 0;
+        elsif flush_timer(s) < TX_MAX_OPEN_CLKS then
+          -- Saturates at the larger of the two thresholds: capping at
+          -- TX_FLUSH_IDLE_CLKS would stop the count before it could ever satisfy
+          -- the stale test, leaving the starvation escape permanently unarmed.
+          flush_timer(s) <= flush_timer(s) + 1;
+        end if;
+      end loop;
+    end if;
+  end process;
+
+  -- Which socket gets flushed when several are due at once. Scanning downwards
+  -- leaves the lowest index selected, matching the strict lowest-index-wins
+  -- priority the output arbiter upstream already uses.
+  p_flush_select : process (flush_timer, batch_open)
+    variable idle_sel  : std_logic_vector(2 downto 0);
+    variable idle_hit  : std_logic;
+    variable stale_sel : std_logic_vector(2 downto 0);
+    variable stale_hit : std_logic;
+  begin
+    idle_sel  := "000";
+    idle_hit  := '0';
+    stale_sel := "000";
+    stale_hit := '0';
+    for s in 7 downto 0 loop
+      if batch_open(s) = '1' and flush_timer(s) >= TX_FLUSH_IDLE_CLKS then
+        idle_sel := std_logic_vector(to_unsigned(s, 3));
+        idle_hit := '1';
+      end if;
+      if batch_open(s) = '1' and flush_timer(s) >= TX_MAX_OPEN_CLKS then
+        stale_sel := std_logic_vector(to_unsigned(s, 3));
+        stale_hit := '1';
+      end if;
+    end loop;
+    idle_socket  <= idle_sel;
+    idle_any     <= idle_hit;
+    stale_socket <= stale_sel;
+    stale_any    <= stale_hit;
+  end process;
+
+  -- Counts how long the control flow has stood still. Any state change clears
+  -- it, so in normal operation it never gets near the limit: the longest state
+  -- is a receive-buffer read at about 1.1 ms against a 2.18 ms threshold.
+  p_watchdog : process (clk)
+  begin
+    if rising_edge(clk) then
+      if reset = '1' or w5500_control_flow_state /= prev_w5500_control_flow_state then
+        watchdog <= 0;
+      elsif watchdog < WATCHDOG_CLKS then
+        watchdog <= watchdog + 1;
+      end if;
+    end if;
+  end process;
 
   u_w5500_axi_data_streamer : w5500_axi_data_streamer
   port map
@@ -270,9 +443,18 @@ begin
 
   ------ State Machine Transistion logic-------
   process (clk, reset, w5500_control_flow_state, spi_busy, spi_header_data)
+    -- Socket of the packet being offered on the external stream right now.
+    -- current_socket_counter cannot stand in for it: it is a signal assigned in
+    -- this same process, so within the cycle that redirects it to ext_pl_tuser
+    -- it still reads back as whatever the RX poll left behind.
+    variable arriving_socket : integer range 0 to 7 := 0;
+    -- Socket whose datagram the transmit states are working on.
+    variable tx_socket       : integer range 0 to 7 := 0;
   begin
 
     if rising_edge(clk) then
+
+      tx_socket := to_integer(unsigned(current_socket_counter));
 
       spi_transaction_finished <= (not spi_busy) and prev_spi_busy;
 
@@ -284,8 +466,7 @@ begin
             rx_received_size_reg          <= (others => '0');
             rx_pointer_reg                <= (others => '0');
             updated_rx_pointer_reg        <= (others => '0');
-            tx_write_pointer              <= (others => '0');
-            ptm_transmitted_byte_counter  <= (others => '0');
+            tx_wr_cur                     <= (others => (others => '0'));
             current_socket_counter        <= "000";
           end if;
 
@@ -460,9 +641,48 @@ begin
           end if;
 
         when CHECK_IF_EXTERNAL_DATA_SOURCE_HAS_DATA =>
-          if (ext_pl_tvalid = '1' and tx_payload_ready = '1') then -- if data on the external TX AXIstream is valid and the payload fifo is ready, then continue
-            next_w5500_control_flow_state <= GET_TX_FREE_BUFFER_SIZE; -- here starts the TX sending data pipeline
+          if (stale_any = '1') then
+            -- Checked before new arrivals on purpose. A datagram that has been
+            -- open this long has to go out even though the stream still has work
+            -- to offer, because the socket it belongs to may be starved at the
+            -- arbiter indefinitely and would otherwise never be revisited.
+            current_socket_counter        <= stale_socket;
+            next_w5500_control_flow_state <= UPDATE_TX_WRITE_POINTER_AFTER_WRITE;
+          elsif (ext_pl_tvalid = '1' and tx_payload_ready = '1') then -- if data on the external TX AXIstream is valid and the payload fifo is ready, then continue
+            arriving_socket := to_integer(unsigned(ext_pl_tuser));
             current_socket_counter <= ext_pl_tuser;
+
+            if (batch_open(arriving_socket) = '1') then
+              -- That socket already has a datagram accumulating, so this packet
+              -- can join it if it is a metric record and there is still room.
+              if (ext_pl_tdata = x"56" and batch_solo(arriving_socket) = '0'
+                  and batch_packets(arriving_socket) < TX_BATCH_MAX_PACKETS) then
+                requested_streammanager_state <= "01"; -- TX_FIFO_PASSTHROUGH_MODE
+                next_w5500_control_flow_state <= WRITE_TX_DATA_TO_BUFFER;
+              else
+                -- Full, or an alert that must travel alone: close this socket's
+                -- datagram now. The packet stays offered on the stream and is
+                -- taken on a later pass, into a fresh datagram.
+                next_w5500_control_flow_state <= UPDATE_TX_WRITE_POINTER_AFTER_WRITE;
+              end if;
+            else
+              -- Nothing open on that socket, so start a datagram there. Any
+              -- datagram open on a *different* socket is deliberately left
+              -- alone -- that independence is the whole point of tracking this
+              -- per socket, and is what lets interleaved traffic batch at all.
+              if (ext_pl_tdata = x"56") then
+                batch_solo(arriving_socket) <= '0';
+              else
+                batch_solo(arriving_socket) <= '1';
+              end if;
+              next_w5500_control_flow_state <= GET_TX_FREE_BUFFER_SIZE; -- here starts the TX sending data pipeline
+            end if;
+          elsif (idle_any = '1') then
+            -- Nothing else is offered and some socket has had nothing for
+            -- TX_FLUSH_IDLE_CLKS. Send what it holds rather than let it wait for
+            -- companions that are not coming.
+            current_socket_counter        <= idle_socket;
+            next_w5500_control_flow_state <= UPDATE_TX_WRITE_POINTER_AFTER_WRITE;
           else
             next_w5500_control_flow_state <= GET_RX_SOCKET_RECEIVED_DATA_SIZE; -- if we can't send data now, we can check if we have received data
           end if;
@@ -483,12 +703,12 @@ begin
         when WAIT_FOR_REQUESTED_RX_SOCKET_DATA_SIZE =>
           if (last_rx_packet_from_w5500_has_been_received = '1') then
             next_w5500_control_flow_state      <= CHECK_IF_RECEIVED_DATA_IS_AVAILABLE_STATE;
-            rx_received_size_reg <= received_payload_buffer(10 downto 0);
+            rx_received_size_reg <= received_payload_buffer(11 downto 0);
           end if;
 
         when CHECK_IF_RECEIVED_DATA_IS_AVAILABLE_STATE =>
           if (prev_w5500_control_flow_state /= w5500_control_flow_state) then 
-            if(rx_received_size_reg = "00000000000") then -- if nothing in the rx socket memory
+            if(rx_received_size_reg = "000000000000") then -- if nothing in the rx socket memory
               current_socket_counter <= std_logic_vector(unsigned(current_socket_counter) + 1);
               next_w5500_control_flow_state <= RETURN_TO_DEFAULT_ROUTINE;
             else
@@ -535,7 +755,7 @@ begin
           if (last_rx_packet_from_w5500_has_been_received = '1') then --if RX FIFO is empty, then all the contents have been read by the external data handler
             requested_streammanager_state <= "00"; -- this means Controller phase to the streammanager
             next_w5500_control_flow_state               <= UPDATE_RX_READ_POINTER_AFTER_BUFFER_READ;
-            updated_rx_pointer_reg <= std_logic_vector(unsigned(rx_pointer_reg) + unsigned("00000" & rx_received_size_reg));
+            updated_rx_pointer_reg <= std_logic_vector(unsigned(rx_pointer_reg) + resize(unsigned(rx_received_size_reg), 16));
           end if;
 
         when UPDATE_RX_READ_POINTER_AFTER_BUFFER_READ =>
@@ -587,7 +807,11 @@ begin
         when CHECK_IF_FREE_SIZE_IS_AVAILABLE =>
           if (last_rx_packet_from_w5500_has_been_received = '1') then
             if (unsigned(received_payload_buffer(15 downto 0)) > minimum_free_tx_buffer_memory) then
-              next_w5500_control_flow_state <= SET_DESTINATION_IP_ADDRESS;
+              if (dest_regs_done(to_integer(unsigned(current_socket_counter))) = '1') then
+                next_w5500_control_flow_state <= GET_TX_WRITE_POINTER; -- already programmed
+              else
+                next_w5500_control_flow_state <= SET_DESTINATION_IP_ADDRESS;
+              end if;
             else
               next_w5500_control_flow_state <= GET_TX_FREE_BUFFER_SIZE;
             end if;
@@ -617,6 +841,7 @@ begin
           if (spi_transaction_finished = '1') then
             next_w5500_control_flow_state <= GET_TX_WRITE_POINTER;
             spi_payload_data_was_set <= '0';
+            dest_regs_done(to_integer(unsigned(current_socket_counter))) <= '1';
           end if;
 
         when GET_TX_WRITE_POINTER =>
@@ -634,27 +859,44 @@ begin
 
         when WAIT_FOR_TX_WRITE_POINTER_TO_BE_RECEIVED =>
           if (last_rx_packet_from_w5500_has_been_received = '1') then
-            next_w5500_control_flow_state <= WRITE_TX_DATA_TO_BUFFER; 
-            tx_write_pointer              <= received_payload_buffer(15 downto 0);
+            next_w5500_control_flow_state <= WRITE_TX_DATA_TO_BUFFER;
             requested_streammanager_state <= "01"; --this means TX_FIFO_PASSTHROUGH_MODE to the stream manager
+            -- Open this socket's datagram at the Sn_TX_WR just read back. From
+            -- here tx_wr_cur walks forward over the whole datagram rather than
+            -- being reset per packet, and the chip sees nothing until it is
+            -- written back at the close.
+            tx_wr_cur(tx_socket)     <= unsigned(received_payload_buffer(15 downto 0));
+            batch_packets(tx_socket) <= 0;
+            batch_open(tx_socket)    <= '1';
           end if;
 
         when WRITE_TX_DATA_TO_BUFFER =>
           if (prev_w5500_control_flow_state /= w5500_control_flow_state) then
             spi_payload_data_was_set <= '1';
-            spi_header_data           <= tx_write_pointer & current_socket_counter & "10" & '1' & "00";
+            -- Append at this socket's running offset instead of the start of the
+            -- buffer, so each packet lands behind the previous one and Sn_TX_WR
+            -- is advanced once, at SEND, over the whole accumulated length.
+            spi_header_data           <= std_logic_vector(tx_wr_cur(tx_socket)) & current_socket_counter & "10" & '1' & "00";
             spi_payload_data   <= x"00000000"; -- irrelevant as extenal source sets data
             spi_payload_data_byte_length   <= 1; -- same here
           end if;
 
           if (ptm_data_being_written_to_w5500 = '1') then
-            ptm_transmitted_byte_counter <= ptm_transmitted_byte_counter + 1;
+            tx_wr_cur(tx_socket) <= tx_wr_cur(tx_socket) + 1;
           end if;
 
           if (spi_transaction_finished = '1') then
-            next_w5500_control_flow_state <= UPDATE_TX_WRITE_POINTER_AFTER_WRITE;
             spi_payload_data_was_set <= '0';
             requested_streammanager_state <= "00";
+            batch_packets(tx_socket) <= batch_packets(tx_socket) + 1;
+            if (batch_packets(tx_socket) + 1 >= TX_BATCH_MAX_PACKETS
+                or batch_solo(tx_socket) = '1') then
+              next_w5500_control_flow_state <= UPDATE_TX_WRITE_POINTER_AFTER_WRITE;
+            else
+              -- Room left: go back and look for the next packet. This socket's
+              -- datagram stays open, nothing has been sent yet.
+              next_w5500_control_flow_state <= RETURN_TO_DEFAULT_ROUTINE;
+            end if;
           end if;
 
         when UPDATE_TX_WRITE_POINTER_AFTER_WRITE =>
@@ -662,7 +904,7 @@ begin
             spi_payload_data_was_set <= '1';
             spi_payload_data_byte_length   <= 2;
             spi_header_data           <= x"0024" & current_socket_counter & "01" & '1' & "00";
-            spi_payload_data   <= std_logic_vector((unsigned(tx_write_pointer) + ptm_transmitted_byte_counter)) & x"0000";
+            spi_payload_data   <= std_logic_vector(tx_wr_cur(tx_socket)) & x"0000";
           end if;
 
           if (spi_transaction_finished = '1') then
@@ -678,8 +920,12 @@ begin
             spi_payload_data   <= x"20000000"; -- 0x20, send command
           end if;
 
-          tx_write_pointer             <= (others => '0');
-          ptm_transmitted_byte_counter <= (others => '0');
+          -- This socket's datagram is on its way out, so its accumulation state
+          -- goes back to closed. Every other socket keeps whatever it holds.
+          tx_wr_cur(tx_socket)     <= (others => '0');
+          batch_packets(tx_socket) <= 0;
+          batch_open(tx_socket)    <= '0';
+          batch_solo(tx_socket)    <= '0';
 
           if (spi_transaction_finished = '1') then
             next_w5500_control_flow_state <= GET_SOCKET_INTERRUPT_REGISTER;
@@ -734,6 +980,30 @@ begin
 
         when others =>
       end case;
+
+      -- Remember that the chip has been configured at least once, so the
+      -- watchdog knows whether it may skip straight to the working loop.
+      if w5500_control_flow_state = RETURN_TO_DEFAULT_ROUTINE then
+        init_done <= '1';
+      end if;
+
+      -- Watchdog escape. Assigned after the case so it overrides whatever the
+      -- current state decided, and it clears everything that could be left half
+      -- open: the stream manager goes back to controller phase, any accumulating
+      -- datagram is abandoned rather than sent with a length nobody can trust.
+      if watchdog >= WATCHDOG_CLKS then
+        requested_streammanager_state <= "00";
+        spi_payload_data_was_set      <= '0';
+        batch_open                    <= (others => '0');
+        batch_solo                    <= (others => '0');
+        batch_packets                 <= (others => 0);
+        tx_wr_cur                     <= (others => (others => '0'));
+        if init_done = '1' then
+          next_w5500_control_flow_state <= RETURN_TO_DEFAULT_ROUTINE;
+        else
+          next_w5500_control_flow_state <= RESET_STATE;
+        end if;
+      end if;
 
       prev_spi_busy <= spi_busy;
 

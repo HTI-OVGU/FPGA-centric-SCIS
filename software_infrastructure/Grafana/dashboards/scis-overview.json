@@ -1,0 +1,554 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": { "type": "grafana", "uid": "-- Grafana --" },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "description": "Slow-control overview: one KPI row, the active alarms, subsystem health, and the readings of one subsystem. Quiet when everything is inside its limits.",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "links": [
+    { "asDropdown": false, "icon": "external link", "tags": ["scis"], "targetBlank": false, "title": "SCIS dashboards", "type": "dashboards" }
+  ],
+  "liveNow": false,
+  "panels": [
+    {
+      "datasource": { "type": "prometheus", "uid": "scis-prometheus" },
+      "description": "Devices that sent a reading in the last 60 s.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "fixed", "fixedColor": "text" },
+          "decimals": 0,
+          "noValue": "0",
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 5, "x": 0, "y": 0 },
+      "id": 1,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "auto"
+      },
+      "pluginVersion": "13.1.0",
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "scis-prometheus" },
+          "editorMode": "code",
+          "expr": "count((time() - dc_device_last_seen_timestamp_seconds) < 60) or vector(0)",
+          "instant": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Reporting",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "scis-prometheus" },
+      "description": "Devices that were seen once but have been silent for more than 60 s.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "decimals": 0,
+          "noValue": "0",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "text", "value": null },
+              { "color": "orange", "value": 1 }
+            ]
+          },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 5, "x": 5, "y": 0 },
+      "id": 2,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "auto"
+      },
+      "pluginVersion": "13.1.0",
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "scis-prometheus" },
+          "editorMode": "code",
+          "expr": "count((time() - dc_device_last_seen_timestamp_seconds) >= 60) or vector(0)",
+          "instant": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Silent > 60 s",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "scis-prometheus" },
+      "description": "Devices reading outside their Warning_Low / Warning_High band but still inside the interlock limits.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "decimals": 0,
+          "noValue": "0",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "text", "value": null },
+              { "color": "#EAB839", "value": 1 }
+            ]
+          },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 10, "y": 0 },
+      "id": 3,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "auto"
+      },
+      "pluginVersion": "13.1.0",
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "scis-prometheus" },
+          "editorMode": "code",
+          "expr": "count(dc_device_severity == 1) or vector(0)",
+          "instant": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Warnings",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "scis-prometheus" },
+      "description": "Devices past their Critical_Low / Critical_High limit — the interlock conditions.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "decimals": 0,
+          "noValue": "0",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "text", "value": null },
+              { "color": "red", "value": 1 }
+            ]
+          },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 5, "x": 14, "y": 0 },
+      "id": 4,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "auto"
+      },
+      "pluginVersion": "13.1.0",
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "scis-prometheus" },
+          "editorMode": "code",
+          "expr": "count(dc_device_severity == 2) or vector(0)",
+          "instant": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Critical",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "scis-prometheus" },
+      "description": "Time since the last INTERLOCK packet from the data concentrator. 'never' = none since the metric server started.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "decimals": 0,
+          "noValue": "never",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "orange", "value": 60 },
+              { "color": "text", "value": 300 }
+            ]
+          },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 5, "x": 19, "y": 0 },
+      "id": 5,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "auto"
+      },
+      "pluginVersion": "13.1.0",
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "scis-prometheus" },
+          "editorMode": "code",
+          "expr": "time() - max(last_interlock_assertion)",
+          "instant": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Since INTERLOCK",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "scis-prometheus" },
+      "description": "Every device currently outside its limits, worst first: what it reads, what it should read (nominal), the limits it must stay between, who owns it and the Interlock_Action the protocol assigns it. 'last seen' is the age of the reading, so a stale alarm is obvious. An empty table means all devices are inside their limits.",
+      "fieldConfig": {
+        "defaults": {
+          "custom": { "align": "auto", "cellOptions": { "type": "auto" }, "inspect": false, "filterable": false },
+          "noValue": "No active alarms — all devices inside their limits."
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "severity" },
+            "properties": [
+              { "id": "custom.width", "value": 110 },
+              { "id": "custom.cellOptions", "value": { "type": "color-background", "mode": "basic" } },
+              { "id": "color", "value": { "mode": "thresholds" } },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    { "color": "#EAB839", "value": null },
+                    { "color": "red", "value": 2 }
+                  ]
+                }
+              },
+              {
+                "id": "mappings",
+                "value": [
+                  { "type": "value", "options": { "1": { "text": "WARNING", "index": 0 }, "2": { "text": "CRITICAL", "index": 1 } } }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "value" },
+            "properties": [
+              { "id": "custom.align", "value": "right" },
+              { "id": "decimals", "value": 3 },
+              { "id": "custom.width", "value": 110 },
+              { "id": "custom.cellOptions", "value": { "type": "color-text" } },
+              { "id": "color", "value": { "mode": "fixed", "fixedColor": "text" } }
+            ]
+          },
+          {
+            "matcher": { "id": "byRegexp", "options": "nominal|crit low|crit high" },
+            "properties": [
+              { "id": "custom.align", "value": "right" },
+              { "id": "decimals", "value": 2 },
+              { "id": "custom.width", "value": 95 },
+              { "id": "noValue", "value": "—" }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "unit" },
+            "properties": [{ "id": "custom.width", "value": 70 }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "priority" },
+            "properties": [{ "id": "custom.width", "value": 90 }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "last seen" },
+            "properties": [
+              { "id": "unit", "value": "s" },
+              { "id": "decimals", "value": 0 },
+              { "id": "custom.align", "value": "right" },
+              { "id": "custom.width", "value": 95 }
+            ]
+          }
+        ]
+      },
+      "gridPos": { "h": 9, "w": 24, "x": 0, "y": 4 },
+      "id": 6,
+      "options": {
+        "cellHeight": "sm",
+        "footer": { "countRows": false, "fields": "", "reducer": ["sum"], "show": false },
+        "showHeader": true,
+        "sortBy": [{ "desc": true, "displayName": "severity" }]
+      },
+      "pluginVersion": "13.1.0",
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "scis-prometheus" },
+          "editorMode": "code",
+          "expr": "max by (identifier, name, unit, subsystem, priority, interlock) (dc_device_severity)",
+          "format": "table",
+          "instant": true,
+          "refId": "A"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "scis-prometheus" },
+          "editorMode": "code",
+          "expr": "max by (identifier) (data_concentrator_0)",
+          "format": "table",
+          "instant": true,
+          "refId": "B"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "scis-prometheus" },
+          "editorMode": "code",
+          "expr": "max by (identifier) (dc_device_nominal)",
+          "format": "table",
+          "instant": true,
+          "refId": "C"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "scis-prometheus" },
+          "editorMode": "code",
+          "expr": "max by (identifier) (dc_device_lower_threshold)",
+          "format": "table",
+          "instant": true,
+          "refId": "D"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "scis-prometheus" },
+          "editorMode": "code",
+          "expr": "max by (identifier) (dc_device_upper_threshold)",
+          "format": "table",
+          "instant": true,
+          "refId": "E"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "scis-prometheus" },
+          "editorMode": "code",
+          "expr": "max by (identifier) (time() - dc_device_last_seen_timestamp_seconds)",
+          "format": "table",
+          "instant": true,
+          "refId": "F"
+        }
+      ],
+      "title": "Active alarms",
+      "transformations": [
+        { "id": "joinByField", "options": { "byField": "identifier", "mode": "outer" } },
+        {
+          "id": "filterByValue",
+          "options": {
+            "type": "include",
+            "match": "all",
+            "filters": [
+              { "fieldName": "Value #A", "config": { "id": "greater", "options": { "value": 0 } } }
+            ]
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "identifier": true,
+              "Time": true, "Time 1": true, "Time 2": true,
+              "Time 3": true, "Time 4": true, "Time 5": true, "Time 6": true
+            },
+            "indexByName": {
+              "Value #A": 0,
+              "name": 1,
+              "Value #B": 2,
+              "unit": 3,
+              "Value #C": 4,
+              "Value #D": 5,
+              "Value #E": 6,
+              "subsystem": 7,
+              "priority": 8,
+              "interlock": 9,
+              "Value #F": 10
+            },
+            "renameByName": {
+              "Value #A": "severity",
+              "Value #B": "value",
+              "Value #C": "nominal",
+              "Value #D": "crit low",
+              "Value #E": "crit high",
+              "Value #F": "last seen",
+              "name": "device",
+              "interlock": "interlock action"
+            }
+          }
+        }
+      ],
+      "type": "table"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "scis-prometheus" },
+      "description": "Worst severity currently reported by any device in each subsystem.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": { "text": "OK", "index": 0 },
+                "1": { "text": "WARNING", "index": 1 },
+                "2": { "text": "CRITICAL", "index": 2 }
+              }
+            }
+          ],
+          "noValue": "no data",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "#EAB839", "value": 1 },
+              { "color": "red", "value": 2 }
+            ]
+          },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 5, "w": 24, "x": 0, "y": 13 },
+      "id": 7,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "horizontal",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "value_and_name"
+      },
+      "pluginVersion": "13.1.0",
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "scis-prometheus" },
+          "editorMode": "code",
+          "expr": "max by (subsystem) (dc_device_severity)",
+          "instant": true,
+          "legendFormat": "{{subsystem}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Subsystem status",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "scis-prometheus" },
+      "description": "Readings of the selected subsystem, by Parameter_Name. Limits are not drawn — a breach shows up in Active alarms above.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisPlacement": "auto",
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": { "group": "A", "mode": "none" }
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 18 },
+      "id": 8,
+      "options": {
+        "legend": { "calcs": ["lastNotNull"], "displayMode": "table", "placement": "right", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "scis-prometheus" },
+          "editorMode": "code",
+          "expr": "data_concentrator_0{subsystem=\"$subsystem\", name=~\"$device\"}",
+          "legendFormat": "{{name}}",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "$subsystem — readings",
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "10s",
+  "schemaVersion": 39,
+  "tags": ["scis", "gatemate"],
+  "templating": {
+    "list": [
+      {
+        "current": {},
+        "datasource": { "type": "prometheus", "uid": "scis-prometheus" },
+        "definition": "label_values(dc_device_severity, subsystem)",
+        "hide": 0,
+        "includeAll": false,
+        "label": "Subsystem",
+        "multi": false,
+        "name": "subsystem",
+        "options": [],
+        "query": "label_values(dc_device_severity, subsystem)",
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "allValue": ".*",
+        "current": {},
+        "datasource": { "type": "prometheus", "uid": "scis-prometheus" },
+        "definition": "label_values(dc_device_severity{subsystem=\"$subsystem\"}, name)",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Device",
+        "multi": true,
+        "name": "device",
+        "options": [],
+        "query": "label_values(dc_device_severity{subsystem=\"$subsystem\"}, name)",
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
+        "type": "query"
+      }
+    ]
+  },
+  "time": { "from": "now-15m", "to": "now" },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "SCIS Overview",
+  "uid": "scis-overview",
+  "version": 3,
+  "weekStart": ""
+}

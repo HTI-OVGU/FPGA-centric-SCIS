@@ -2,15 +2,25 @@ import socket
 import time
 from datetime import datetime
 
+from net_utils import resolve_host_ip
+
+# Dual-W5500 FPGA: send the trigger to the RX chip (192.168.2.100); the INTERLOCK
+# alert is emitted by the TX chip back to the host (192.168.2.106).
 TARGET_IP = "192.168.2.100"
 TARGET_PORT = 9217
+
+# Bind to whatever address the host actually holds on the FPGA subnet, so a
+# reboot that has not (yet) re-applied 192.168.2.106 gives a clear error instead
+# of an "OSError: [Errno 99] Cannot assign requested address" crash.
+HOST_IP = resolve_host_ip(TARGET_IP)
+print(f"Binding to host IP {HOST_IP}, sending to {TARGET_IP}:{TARGET_PORT}")
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 sock.settimeout(5.0)  # 5 second timeout
 
 test_data = b"V01P10000"  # Test message to send
 
-sock.bind(("192.168.2.106", TARGET_PORT)) 
+sock.bind((HOST_IP, TARGET_PORT))
 
 try:
     print("Sending command and waiting for INTERLOCK response...")

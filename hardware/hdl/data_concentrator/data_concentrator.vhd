@@ -2,6 +2,7 @@ library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.numeric_std.all;
 use work.metric_axi_stream_pkg.all;
+use work.threshold_tables_pkg.all;
 
 entity data_concentrator is
     generic (
@@ -17,7 +18,7 @@ entity data_concentrator is
         tready      : in  STD_LOGIC;
         tuser       : out STD_LOGIC_VECTOR(2 downto 0);
         -- r side are input channels for metric packets
-        s_axis: in metric_axi_stream_array_t(input_channel_amount-1 to 0);
+        s_axis: in metric_axi_stream_array_t(input_channel_amount-1 downto 0);
         s_axis_ready : out std_logic_vector(input_channel_amount-1 downto 0);
         interlock  : out STD_LOGIC;
         deassert_interlock : in STD_LOGIC;
@@ -37,9 +38,14 @@ architecture Behavioral of data_concentrator is
     signal int_rdata_from_w5500_controller : std_logic_vector(7 downto 0);
     signal int_debug_output_signals : std_logic_vector(7 downto 0);
 
-    signal metric_packet_s_axis_array : metric_axi_stream_array_t(0 downto 0);
-    signal metric_packet_s_axis_tready_array : std_logic_vector(0 downto 0);
+    signal metric_packet_s_axis_array : metric_axi_stream_array_t(0 to input_channel_amount-1);
+    signal metric_packet_s_axis_tready_array : std_logic_vector(input_channel_amount-1 downto 0);
     signal metric_packet_m_axis : metric_axi_stream_t;
+
+    -- per-channel threshold_logic outputs + interlocks (one threshold_logic per input channel)
+    signal post_threshold_axis        : metric_axi_stream_array_t(0 to input_channel_amount-1);
+    signal post_threshold_axis_tready : std_logic_vector(input_channel_amount-1 downto 0);
+    signal interlock_vec              : std_logic_vector(input_channel_amount-1 downto 0);
 
     signal interlock_metric_packet_s_axis : metric_axi_stream_t;
     signal interlock_metric_packet_s_axis_tready : std_logic;
@@ -62,7 +68,10 @@ architecture Behavioral of data_concentrator is
     end component;
 
 
-    component threshold_logic is 
+    component threshold_logic is
+        generic (
+            INIT_TABLE : threshold_table_t := ZERO_THRESHOLD_TABLE
+        );
         port (
             clk         : in  STD_LOGIC;
             reset       : in  STD_LOGIC;
@@ -89,8 +98,8 @@ architecture Behavioral of data_concentrator is
             clk   : in std_logic;
             reset : in std_logic;
             s_axis: in metric_axi_stream_array_t(0 to metric_input_stream_amount-1); -- these are the metric packet streams coming in
-            s_axis_tready : out std_logic_vector(0 downto metric_input_stream_amount-1);
-            m_axis : out metric_axi_stream_t; -- towards the threshold logic 
+            s_axis_tready : out std_logic_vector(metric_input_stream_amount-1 downto 0);
+            m_axis : out metric_axi_stream_t; -- towards the threshold logic
             m_axis_tready : in std_logic;
             almost_full_vector : out std_logic_vector(7 downto 0)
         );
@@ -118,25 +127,49 @@ architecture Behavioral of data_concentrator is
 
 begin
 
-    unit_threshold_logic : threshold_logic
-     port map(
-        clk => clk,
-        reset => reset,
-        tdata => m_metric_axis_0.tdata,
-        tvalid => m_metric_axis_0.tvalid,
-        tlast => m_metric_axis_0.tlast,
-        tready => m_metric_axis_0_tready,
-        tuser => m_metric_axis_0.tuser,
-        rdata => s_axis(0).tdata,
-        rlast => s_axis(0).tlast,
-        rvalid => s_axis(0).tvalid,
-        rready => s_axis_ready(0),
-        ruser => s_axis(0).tuser,
-        interlock => interlock_0,
-        deassert_interlock => deassert_interlock
-    );
+    -- One threshold_logic per input channel. Each parses its own metric stream,
+    -- raises its own interlock, and feeds one input of the metric_packet_manager.
+    gen_threshold_per_channel : for ch in 0 to input_channel_amount-1 generate
+        unit_threshold_logic : threshold_logic
+         generic map(
+            -- each channel gets its own compile-time table (thesis 5.3: 1024
+            -- threshold pairs per input channel); channels beyond the tables
+            -- defined in threshold_tables_pkg fall back to the zero table
+            INIT_TABLE => CHANNEL_THRESHOLD_TABLES(ch)
+        )
+         port map(
+            clk => clk,
+            reset => reset,
+            tdata => post_threshold_axis(ch).tdata,
+            tvalid => post_threshold_axis(ch).tvalid,
+            tlast => post_threshold_axis(ch).tlast,
+            tready => post_threshold_axis_tready(ch),
+            tuser => post_threshold_axis(ch).tuser,
+            rdata => s_axis(ch).tdata,
+            rlast => s_axis(ch).tlast,
+            rvalid => s_axis(ch).tvalid,
+            rready => s_axis_ready(ch),
+            ruser => s_axis(ch).tuser,
+            interlock => interlock_vec(ch),
+            deassert_interlock => deassert_interlock
+        );
 
-    int_global_interlock <= interlock_0 or filtered_ext_interlock; -- or interlock_1 or interlock_2 ...
+        metric_packet_s_axis_array(ch)        <= post_threshold_axis(ch);
+        post_threshold_axis_tready(ch)        <= metric_packet_s_axis_tready_array(ch);
+    end generate gen_threshold_per_channel;
+
+    -- global interlock = OR of every channel's interlock, plus the filtered external
+    -- source. Explicit loop (not the VHDL-2008 "or" reduction) so this file still
+    -- compiles under plain VHDL-93 (e.g. the sim_all Makefile target).
+    interlock_reduce : process(interlock_vec, filtered_ext_interlock)
+        variable v : std_logic;
+    begin
+        v := '0';
+        for i in interlock_vec'range loop
+            v := v or interlock_vec(i);
+        end loop;
+        int_global_interlock <= v or filtered_ext_interlock;
+    end process;
 
     interlock <= int_global_interlock;
 
@@ -167,12 +200,11 @@ begin
     );
 
 
-    metric_packet_s_axis_array(0) <= m_metric_axis_0; -- output of thresholding logic
-    m_metric_axis_0_tready <= metric_packet_s_axis_tready_array(0);
+    -- (per-channel stream <-> manager wiring is done in gen_threshold_per_channel above)
 
     unit_metric_packet_manager : metric_packet_manager
      generic map(
-        metric_input_stream_amount => 1
+        metric_input_stream_amount => input_channel_amount
     )
      port map(
         clk => clk,

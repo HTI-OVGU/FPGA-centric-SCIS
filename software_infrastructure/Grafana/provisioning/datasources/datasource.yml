@@ -1,0 +1,22 @@
+# Auto-provisioned Prometheus data source for the SCIS monitoring stack.
+# Grafana runs on the default bridge network, so it reaches the host-networked
+# Prometheus (:9090) via the Docker host gateway 172.17.0.1.
+apiVersion: 1
+
+# Remove any pre-existing (e.g. manually-created) "Prometheus" datasource first, so the
+# provisioned one below owns a stable uid and dashboards can reference it reliably.
+deleteDatasources:
+  - name: Prometheus
+    orgId: 1
+
+datasources:
+  - name: Prometheus
+    uid: scis-prometheus
+    type: prometheus
+    access: proxy
+    url: http://172.17.0.1:9090
+    isDefault: true
+    editable: true
+    jsonData:
+      httpMethod: POST
+      timeInterval: 10s

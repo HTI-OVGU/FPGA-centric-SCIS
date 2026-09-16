@@ -2,8 +2,14 @@ library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.numeric_std.all;
 use work.metric_axi_stream_pkg.all;
+use work.threshold_tables_pkg.all;
 
 entity threshold_logic is
+    generic (
+        -- per-channel threshold table (see threshold_tables_pkg); the fail-safe
+        -- zero default interlocks on any non-zero metric value
+        INIT_TABLE : threshold_table_t := ZERO_THRESHOLD_TABLE
+    );
     port (
         clk         : in  STD_LOGIC;
         reset       : in  STD_LOGIC;
@@ -43,7 +49,8 @@ signal int_last : std_logic;
 component threshold_lookup_bram is
   generic (
     DATA_WIDTH : integer := 32;
-    ADDR_WIDTH : integer := 10
+    ADDR_WIDTH : integer := 11;
+    INIT_TABLE : threshold_table_t := ZERO_THRESHOLD_TABLE
   );
   port (
     wea   : in std_logic;
@@ -209,7 +216,8 @@ begin
     lookup_bram : threshold_lookup_bram
      generic map(
         DATA_WIDTH => 32,
-        ADDR_WIDTH => 11 -- 10 bit per device + 1 such that 2 BRAMs are generated
+        ADDR_WIDTH => 11, -- 10 bit per device + 1 such that 2 BRAMs are generated
+        INIT_TABLE => INIT_TABLE
     )
      port map(
         wea => '0',

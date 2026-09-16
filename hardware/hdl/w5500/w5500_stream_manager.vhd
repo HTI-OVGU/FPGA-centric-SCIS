@@ -37,7 +37,7 @@ entity w5500_stream_manager is
     spi_header_valid : out std_logic;
 
     spi_data_buffer : in std_logic_vector(31 downto 0); -- raw spi payload data from FSM
-    spi_data_length : in integer range 0 to 2047; -- amount of payload bytes to be transmitted
+    spi_data_length : in integer range 0 to 4095; -- amount of payload bytes to be transmitted
     payload_data_has_been_set : in std_logic;
 
     ptm_data_being_written_to_w5500 : out std_logic;
@@ -61,7 +61,7 @@ signal prev_payload_data_has_been_set : std_logic := '0';
 signal rx_shift_payload_buffer : std_logic_vector(31 downto 0) := (others => '0'); --4*8 bit buffer, that can store up to 4 Bytes of data simultaneously, coming from the W5500
 signal tx_shift_payload_buffer : std_logic_vector(31 downto 0) := (others => '0'); --4*8 bit buffer, storing the payload data coming from the W5500 FSM, that's supposed to go to the W5500
 
-signal pl_byte_length_buffer : integer range 0 to 2047 := 0;
+signal pl_byte_length_buffer : integer range 0 to 4095 := 0;
 
 signal ptm_packet_done : std_logic := '0';
 
@@ -96,7 +96,17 @@ end process;
 
  --combinatorical process
 
-process(streammanager_state, ptm_packet_done, ext_pl_tvalid, tx_payload_ready, rx_payload_valid, ext_pl_rready)
+-- Incomplete sensitivity lists make a combinational process behave one way in
+-- simulation and another in synthesis: the tools infer the full list, the
+-- simulator obeys what is written. This one drives ext_pl_rdata from
+-- rx_payload_data and ext_pl_rlast from rx_payload_last and the UDP splitter,
+-- none of which were listed, so in simulation the receive stream kept showing
+-- the previous byte whenever the data advanced without valid or ready moving --
+-- a repeated byte that the hardware never produced. Listing every signal the
+-- process reads is what makes the bench trustworthy.
+process(streammanager_state, ptm_packet_done, ext_pl_tvalid, tx_payload_ready,
+        rx_payload_valid, rx_payload_data, rx_payload_last,
+        udp_packet_seperator_tlast, ext_pl_rready)
 begin
     --defaults
     ptm_data_being_written_to_w5500 <= '0';

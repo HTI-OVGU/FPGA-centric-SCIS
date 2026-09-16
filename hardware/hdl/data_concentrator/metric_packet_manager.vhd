@@ -11,7 +11,7 @@ entity metric_packet_manager is
         clk   : in std_logic;
         reset : in std_logic;
         s_axis: in metric_axi_stream_array_t(0 to metric_input_stream_amount-1); -- these are the metric packet streams coming in
-        s_axis_tready : out std_logic_vector(0 downto metric_input_stream_amount-1);
+        s_axis_tready : out std_logic_vector(metric_input_stream_amount-1 downto 0); -- was (0 downto N-1): null range for N>1
         m_axis : out metric_axi_stream_t; -- towards the thresholding mechanism
         m_axis_tready : in std_logic;
         almost_full_vector : out std_logic_vector(7 downto 0)
@@ -47,7 +47,7 @@ architecture Behavioral of metric_packet_manager is
     end component;
 
     type packet_manager_state is (ROUND_ROBIN, PASSTHROUGH);
-    signal current_input_arbiter_state, next_input_arbiter_state : packet_manager_state := ROUND_ROBIN;
+    signal current_input_arbiter_state : packet_manager_state := ROUND_ROBIN;
 
     type priority_arbiter_state is (CHECK_AVAILABLE_FIFO_DATA, PASSTHROUGH_TO_OUTPUT);
     signal current_output_arbiter_state : priority_arbiter_state := CHECK_AVAILABLE_FIFO_DATA;
@@ -93,7 +93,6 @@ architecture Behavioral of metric_packet_manager is
     signal current_input_metric_stream_index : integer := 0;
     signal current_input_metric_stream : metric_axi_stream_t;
     signal current_input_metric_stream_tready : std_logic;
-    signal packet_available : std_logic := '0';
 
     signal current_output_metric_stream : metric_axi_stream_t;
     signal current_output_metric_stream_index : INTEGER := 0;
@@ -112,53 +111,71 @@ architecture Behavioral of metric_packet_manager is
 
 begin
 
-    process(clk, reset) 
-    begin 
-        if(rising_edge(clk)) then 
-            if(reset = '1') then 
-                current_input_arbiter_state <= ROUND_ROBIN;
-            else 
-                current_input_arbiter_state <= next_input_arbiter_state;
-            end if;
-        end if;
-    end process;
-
-
-    process (clk, reset) -- metric packet manager FSM (round robin and passthrough, also demux)
-    begin 
-        if(rising_edge(clk)) then 
-            if(reset = '1') then
+    -- ------------------------------------------------------------------
+    -- Input arbiter: round-robin across the input streams, then LOCK onto
+    -- one stream for the whole packet (PASSTHROUGH) until its tlast beat.
+    --
+    -- Single-process FSM. The previous 2-process version had a one-cycle lag
+    -- between deciding PASSTHROUGH and the state register actually flipping.
+    -- In that lag cycle the ROUND_ROBIN branch ran again -- by then the skid
+    -- buffer held the first beat, so current_input_metric_stream_tready was
+    -- '0' -- and the "else" advanced the index OFF the active stream onto an
+    -- idle one. It then sat in PASSTHROUGH forever waiting for a tlast on the
+    -- idle stream (deadlock) whenever metric_input_stream_amount > 1. At
+    -- amount=1 the index could only wrap 0->0, so the single-stream
+    -- (W5500-only) build was unaffected -- which is why this only surfaced
+    -- once CAN added a 2nd channel. Lock on tvalid alone (the skid buffer
+    -- applies backpressure); never advance off a stream that has a packet.
+    -- ------------------------------------------------------------------
+    process (clk)
+    begin
+        if rising_edge(clk) then
+            if reset = '1' then
+                current_input_arbiter_state       <= ROUND_ROBIN;
                 current_input_metric_stream_index <= 0;
-                next_input_arbiter_state <= ROUND_ROBIN;
-                packet_available <= '0';
-            else 
+            else
                 case current_input_arbiter_state is
-                    when ROUND_ROBIN => 
-                        packet_available <= '0';
-                        if current_input_metric_stream_index = metric_input_stream_amount-1 then --round robin through all streams
+                    when ROUND_ROBIN =>
+                        -- Lock onto the first stream that presents a packet. Hold the
+                        -- index so PASSTHROUGH sees the SAME stream; the skid buffer
+                        -- captures the first beat this same cycle when it is ready.
+                        if s_axis(current_input_metric_stream_index).tvalid = '1' then
+                            current_input_arbiter_state <= PASSTHROUGH;
+                        elsif current_input_metric_stream_index = metric_input_stream_amount-1 then
                             current_input_metric_stream_index <= 0;
                         else
                             current_input_metric_stream_index <= current_input_metric_stream_index + 1;
                         end if;
 
-                        if s_axis(current_input_metric_stream_index).tvalid = '1' and current_input_metric_stream_tready = '1' then 
-                            next_input_arbiter_state <= PASSTHROUGH;
-                            packet_available <= '1';
-                        end if;
-
                     when PASSTHROUGH =>
-                        -- passthrough enabled
-                        if((current_input_metric_stream.tlast = '1' and current_input_metric_stream.tvalid = '1') and current_input_metric_stream_tready = '1') then -- if last byte of the metric packet received, then go back to round robin
-                            next_input_arbiter_state <= ROUND_ROBIN;
-                            packet_available <= '0';
+                        -- Stream the locked packet until its last beat is accepted,
+                        -- then resume scanning from the NEXT stream (fairness).
+                        if current_input_metric_stream.tvalid = '1'
+                           and current_input_metric_stream.tlast = '1'
+                           and current_input_metric_stream_tready = '1' then
+                            current_input_arbiter_state <= ROUND_ROBIN;
+                            if current_input_metric_stream_index = metric_input_stream_amount-1 then
+                                current_input_metric_stream_index <= 0;
+                            else
+                                current_input_metric_stream_index <= current_input_metric_stream_index + 1;
+                            end if;
                         end if;
                 end case;
             end if;
         end if;
-
     end process;
 
-    s_axis_tready(current_input_metric_stream_index) <= current_input_metric_stream_tready;
+    -- Drive EVERY channel's tready: default not-ready, assert only the selected
+    -- channel. Driving just the selected index (as before) left the other channels'
+    -- tready undriven ('U') in multi-channel mode, which corrupts their upstream
+    -- threshold_logic FIFOs (a packet on an idle-while-not-selected channel never
+    -- drains). Backpressuring the non-selected channels with '0' is correct.
+    tready_demux : process(current_input_metric_stream_index, current_input_metric_stream_tready)
+    begin
+        s_axis_tready <= (others => '0');
+        s_axis_tready(current_input_metric_stream_index) <= current_input_metric_stream_tready;
+    end process;
+
     current_input_metric_stream <= s_axis(current_input_metric_stream_index);
 
     -- Combined register slice + latch process

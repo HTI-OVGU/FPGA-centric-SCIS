@@ -1,11 +1,16 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
+use work.threshold_tables_pkg.all;
 -- Dual Port RAM (NO_CHANGE)
+-- Threshold contents come from the INIT_TABLE generic (per-channel tables live
+-- in threshold_tables_pkg). DATA_WIDTH/ADDR_WIDTH must stay 32/11 to match
+-- threshold_table_t (2048 x 32 bit).
 entity threshold_lookup_bram is
   generic (
     DATA_WIDTH : integer := 32;
-    ADDR_WIDTH : integer := 11
+    ADDR_WIDTH : integer := 11;
+    INIT_TABLE : threshold_table_t := ZERO_THRESHOLD_TABLE
   );
   port (
     wea   : in std_logic;
@@ -21,28 +26,7 @@ entity threshold_lookup_bram is
   );
 end entity;
 architecture rtl of threshold_lookup_bram is
-  type ram is array (0 to (2 ** ADDR_WIDTH) - 1) of std_logic_vector(DATA_WIDTH - 1 downto 0);
-  shared variable memory : ram := (
-    0 => x"00000000",      -- value at address 0
-    1 => x"0000FABC",     -- value at address 1
-    2 => x"00000000",      -- value at address 2 (example)
-    3 => x"DEADBEEF",
-    98 => x"00001010",
-    99 => x"00000015",
-    192 => x"00000013",
-    193 => x"00000020",
-    640 => x"00000000", --PSUs
-    641 => x"000FA000",
-    536 => x"00000000", -- COIL
-    537 => x"00002800",
-    560 => x"00000000", -- FAN speed
-    561 => x"000F4000",
-    664 => x"00000000", -- system load
-    665 => x"00019000",
-    2046 => x"FFFFFFFF",
-    2047 => x"FFFFFFFF",
-    others => (others => '0')  -- fill all remaining addresses with '0'
-  );
+  shared variable memory : threshold_table_t := INIT_TABLE;
 begin
   port_a: process(clka)
     begin
@@ -65,4 +49,3 @@ begin
       end if;
   end process port_b;
 end architecture;
-
